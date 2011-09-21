@@ -14,6 +14,11 @@ import Yesod
 import Yesod.Form.Fields
 import Yesod.Form.Jquery
 
+
+------------------------------------------------------------
+-- Models
+------------------------------------------------------------
+
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persist|
 YikiPage
     name String
@@ -21,13 +26,26 @@ YikiPage
     created UTCTime default='now'
 |]
 
-data Yiki = Yiki ConnectionPool
+getPage name = do
+  selectFirst [YikiPageName ==. name] []
 
-mkYesod "Yiki" [parseRoutes|
-/ HomeR GET
-/page/#Text PageR GET POST
-/page/#Text/edit EditR GET
-|]
+numOfPages = do
+  Yesod.count ([] :: [Filter YikiPage])
+
+insertDefaultDataIfNecessary = do
+  numOfPages <- numOfPages
+  when (numOfPages == 0) $ do
+    body <- liftIO $ readFile "Samples/sample.md"
+    now <- liftIO getCurrentTime
+    insert $ YikiPage "home" body now
+    return ()
+
+
+------------------------------------------------------------
+-- Applicaiton
+------------------------------------------------------------
+
+data Yiki = Yiki ConnectionPool
 
 instance Yesod Yiki where
     approot _ = ""
@@ -44,6 +62,57 @@ instance RenderMessage Yiki FormMessage where
 
 instance YesodJquery Yiki
 
+mkYesod "Yiki" [parseRoutes|
+/ HomeR GET
+/new NewR GET POST
+/pages/#Text PageR GET
+/pages/#Text/edit EditR GET POST
+/pages/#Text/delete DeleteR POST
+|]
+
+openConnectionCount :: Int
+openConnectionCount = 10
+
+------------------------------------------------------------
+-- Handlers
+------------------------------------------------------------
+
+defaultPage = [whamlet|
+<h1>Welcome to Yiki
+
+<p>This is the start page. You can Edit this page from <a href="@{EditR "home"}">here</a>.
+|]
+
+
+---- Home
+
+getHomeR = defaultLayout defaultPage
+
+
+---- YikiPages
+
+-- create
+
+getNewR :: Handler RepHtml
+getNewR = undefined
+
+postNewR :: Handler RepHtml
+postNewR = undefined
+
+
+-- read
+
+getPageR :: Text -> Handler RepHtml
+getPageR pageName = do
+  page <- runDB $ getPage name
+  case page of
+    Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
+    Just (id,page) -> defaultLayout [whamlet|<p>#{yikiPageBody page}|]
+  where name = unpack pageName
+
+
+-- update
+
 data YikiPageEdit = YikiPageEdit
   { peName :: Text
   , peBody :: Textarea
@@ -57,28 +126,6 @@ yikiPageForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPag
 yikiPageForm ype = renderDivs $ YikiPageEdit
   <$> areq textField "Name" (peName <$> ype)
   <*> areq textareaField "Body" (peBody <$> ype)
-
-defaultPage = [whamlet|
-<h1>Welcome to Yiki
-
-<p>This is the start page. You can Edit this page from <a href="@{EditR "home"}">here</a>.
-|]
-
-getHomeR = defaultLayout defaultPage
-
-getPage name = do
-  selectFirst [YikiPageName ==. name] []
-
-getPageR :: Text -> Handler RepHtml
-getPageR pageName = do
-  page <- runDB $ getPage name
-  case page of
-    Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
-    Just (id,page) -> defaultLayout [whamlet|<p>#{yikiPageBody page}|]
-  where name = unpack pageName
-
-postPageR :: Text -> Handler RepHtml
-postPageR pageId = undefined
 
 getEditR :: Text -> Handler RepHtml
 getEditR pageName = do
@@ -95,16 +142,20 @@ getEditR pageName = do
 <p>
 |]
 
-insertDefaultDataIfNecessary = do
-  numOfPages <- Yesod.count ([] :: [Filter YikiPage])
-  when (numOfPages == 0) $ do
-    body <- liftIO $ readFile "Samples/sample.md"
-    now <- liftIO getCurrentTime
-    insert $ YikiPage "home" body now
-    return ()
 
-openConnectionCount :: Int
-openConnectionCount = 10
+postEditR :: Text -> Handler RepHtml
+postEditR pageId = undefined
+
+
+-- delete
+
+postDeleteR :: Text -> Handler RepHtml
+postDeleteR = undefined
+
+
+------------------------------------------------------------
+-- Driver
+------------------------------------------------------------
 
 main :: IO ()
 main = withSqlitePool "yiki.sqlite" openConnectionCount $ \pool -> do
