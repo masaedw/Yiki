@@ -12,12 +12,11 @@ import Database.Persist.TH
 import Yesod
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persist|
-Page
+YikiPage
     name String
     body String
     created UTCTime default='now'
 |]
-
 
 data Yiki = Yiki ConnectionPool
 
@@ -45,8 +44,17 @@ defaultPage = [whamlet|
 
 getHomeR = defaultLayout defaultPage
 
+getPage name = do
+  selectFirst [YikiPageName ==. name] []
+
 getPageR :: Text -> Handler RepHtml
-getPageR pageId = undefined
+getPageR pageName = do
+  page <- runDB $ getPage name
+  case page of
+    Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
+    Just (id,page) -> defaultLayout [whamlet|<p>#{yikiPageBody page}|]
+  where name :: String
+        name = unpack pageName
 
 postPageR :: Text -> Handler RepHtml
 postPageR pageId = undefined
