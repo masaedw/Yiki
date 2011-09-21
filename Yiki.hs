@@ -18,12 +18,8 @@ Page
     created UTCTime default='now'
 |]
 
-main = withSqliteConn "yiki.sqlite" $ runSqlConn $ do
-    time <- liftIO getCurrentTime
-    runMigration migrateAll
 
-
-data Yiki = Yiki
+data Yiki = Yiki ConnectionPool
 
 mkYesod "Yiki" [parseRoutes|
 / HomeR GET
@@ -33,6 +29,13 @@ mkYesod "Yiki" [parseRoutes|
 
 instance Yesod Yiki where
     approot _ = ""
+
+instance YesodPersist Yiki where
+    type YesodPersistBackend Yiki = SqlPersist
+
+    runDB action = liftIOHandler $ do
+      Yiki pool <- getYesod
+      runSqlPool action pool
 
 defaultPage = [whamlet|
 <h1>Welcome to Yiki
@@ -51,4 +54,11 @@ postPageR pageId = undefined
 getEditR :: Text -> Handler RepHtml
 getEditR pageId = undefined
 
-withYiki f = toWaiApp Yiki >>= f
+openConnectionCount :: Int
+openConnectionCount = 10
+
+main :: IO ()
+main = withSqlitePool "yiki.sqlite" openConnectionCount $ \pool -> do
+    runSqlPool (runMigration migrateAll) pool
+    warpDebug 3000 $ Yiki pool
+
