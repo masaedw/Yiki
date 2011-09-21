@@ -5,7 +5,7 @@ module Yiki where
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Control.Monad.IO.Class
-import Data.Text
+import Data.Text hiding (null, map)
 import Data.Time
 import Database.Persist
 import Database.Persist.Sqlite
@@ -29,6 +29,9 @@ YikiPage
 
 getPage name = do
   selectFirst [YikiPageName ==. name] []
+
+getPages n = do
+  map snd <$> selectList [] [LimitTo n]
 
 numOfPages = do
   Yesod.count ([] :: [Filter YikiPage])
@@ -74,6 +77,7 @@ mkYesod "Yiki" [parseRoutes|
 /pages/#Text PageR GET
 /pages/#Text/edit EditR GET POST
 /pages/#Text/delete DeleteR POST
+/index IndexR GET
 |]
 
 openConnectionCount :: Int
@@ -153,6 +157,22 @@ postEditR pageId = undefined
 postDeleteR :: Text -> Handler RepHtml
 postDeleteR = undefined
 
+
+-- display all the articles
+getIndexR :: Handler RepHtml
+getIndexR = do
+  pages <- runDB $ getPages 20
+  defaultLayout [whamlet|
+<h1>Index
+<h2> All the articles
+  $if null pages
+      No Articles
+  $else
+       <ul>
+       <li> Title
+       $forall page <- pages
+         <li> #{yikiPageName page}  #{show $ yikiPageCreated page}
+|]
 
 ------------------------------------------------------------
 -- Driver
