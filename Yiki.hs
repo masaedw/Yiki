@@ -11,7 +11,6 @@ import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Yesod
-import Yesod.Form.Fields
 import Yesod.Form.Jquery
 
 
