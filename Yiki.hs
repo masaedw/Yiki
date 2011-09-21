@@ -10,6 +10,8 @@ import Data.Time
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
+import Text.Blaze
+import Text.Pandoc
 import Yesod
 import Yesod.Form.Fields
 import Yesod.Form.Jquery
@@ -40,6 +42,11 @@ insertDefaultDataIfNecessary = do
     insert $ YikiPage "home" body now
     return ()
 
+
+markdownToHtml :: String -> String
+markdownToHtml =
+  (writeHtmlString defaultWriterOptions {writerReferenceLinks = True}) .
+  readMarkdown defaultParserState
 
 ------------------------------------------------------------
 -- Applicaiton
@@ -77,16 +84,9 @@ openConnectionCount = 10
 -- Handlers
 ------------------------------------------------------------
 
-defaultPage = [whamlet|
-<h1>Welcome to Yiki
-
-<p>This is the start page. You can Edit this page from <a href="@{EditR "home"}">here</a>.
-|]
-
-
 ---- Home
 
-getHomeR = defaultLayout defaultPage
+getHomeR = getPageR "home"
 
 
 ---- YikiPages
@@ -107,7 +107,9 @@ getPageR pageName = do
   page <- runDB $ getPage name
   case page of
     Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
-    Just (id,page) -> defaultLayout [whamlet|<p>#{yikiPageBody page}|]
+    Just (id,page) -> do
+      let content = preEscapedString $ markdownToHtml $ yikiPageBody page
+      defaultLayout [whamlet|<p>#{content}|]
   where name = unpack pageName
 
 
