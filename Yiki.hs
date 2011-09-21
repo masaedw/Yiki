@@ -3,6 +3,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 module Yiki where
 import Control.Applicative ((<$>), (<*>))
+import Control.Monad
 import Control.Monad.IO.Class
 import Data.Text
 import Data.Time
@@ -94,6 +95,13 @@ getEditR pageName = do
 <p>
 |]
 
+insertDefaultDataIfNecessary = do
+  numOfPages <- Yesod.count ([] :: [Filter YikiPage])
+  when (numOfPages == 0) $ do
+    body <- liftIO $ readFile "Samples/sample.md"
+    now <- liftIO getCurrentTime
+    insert $ YikiPage "home" body now
+    return ()
 
 openConnectionCount :: Int
 openConnectionCount = 10
@@ -101,5 +109,6 @@ openConnectionCount = 10
 main :: IO ()
 main = withSqlitePool "yiki.sqlite" openConnectionCount $ \pool -> do
     runSqlPool (runMigration migrateAll) pool
+    runSqlPool insertDefaultDataIfNecessary pool
     warpDebug 3000 $ Yiki pool
 
