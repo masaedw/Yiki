@@ -13,7 +13,6 @@ import Database.Persist.TH
 import Text.Blaze
 import Text.Pandoc
 import Yesod
-import Yesod.Form.Fields
 import Yesod.Form.Jquery
 
 
