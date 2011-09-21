@@ -157,9 +157,13 @@ postDeleteR = undefined
 -- Driver
 ------------------------------------------------------------
 
-main :: IO ()
-main = withSqlitePool "yiki.sqlite" openConnectionCount $ \pool -> do
+driver f = withSqlitePool "yiki.sqlite" openConnectionCount $ \pool -> do
     runSqlPool (runMigration migrateAll) pool
     runSqlPool insertDefaultDataIfNecessary pool
-    warpDebug 3000 $ Yiki pool
+    f $ Yiki pool
+
+main :: IO ()
+main = driver $ warpDebug 3000
+
+withYiki f = driver $ \app -> (toWaiApp $ app) >>= f
 
