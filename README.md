@@ -1,0 +1,3 @@
+# Yiki
+
+a simple wiki
