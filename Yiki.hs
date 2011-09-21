@@ -1,8 +1,8 @@
 {-# LANGUAGE QuasiQuotes, TypeFamilies, GeneralizedNewtypeDeriving, TemplateHaskell, OverloadedStrings, GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
-
 module Yiki where
+import Control.Applicative ((<$>), (<*>))
 import Control.Monad.IO.Class
 import Data.Text
 import Data.Time
@@ -10,6 +10,8 @@ import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Yesod
+import Yesod.Form.Fields
+import Yesod.Form.Jquery
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persist|
 YikiPage
@@ -36,6 +38,25 @@ instance YesodPersist Yiki where
       Yiki pool <- getYesod
       runSqlPool action pool
 
+instance RenderMessage Yiki FormMessage where
+    renderMessage _ _ = defaultFormMessage
+
+instance YesodJquery Yiki
+
+data YikiPageEdit = YikiPageEdit
+  { peName :: Text
+  , peBody :: Text
+  }
+
+toPageEdit :: YikiPage -> YikiPageEdit
+toPageEdit yp =
+    YikiPageEdit (pack $ yikiPageName yp) (pack $ yikiPageBody yp)
+
+yikiPageForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPageEdit, Widget)
+yikiPageForm ype = renderDivs $ YikiPageEdit
+  <$> areq textField "Name" (peName <$> ype)
+  <*> areq textField "Body" (peBody <$> ype)
+
 defaultPage = [whamlet|
 <h1>Welcome to Yiki
 
@@ -53,14 +74,26 @@ getPageR pageName = do
   case page of
     Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
     Just (id,page) -> defaultLayout [whamlet|<p>#{yikiPageBody page}|]
-  where name :: String
-        name = unpack pageName
+  where name = unpack pageName
 
 postPageR :: Text -> Handler RepHtml
 postPageR pageId = undefined
 
 getEditR :: Text -> Handler RepHtml
-getEditR pageId = undefined
+getEditR pageName = do
+  -- result :: Maybe (YikiPageId, YikiPage)
+  result <- runDB $ getPage $ unpack pageName
+  case result of
+    Nothing -> defaultLayout [whamlet|<p>no such page: #{unpack pageName}|]
+    Just (_,page) -> do
+       ((_, widget), enctype) <- generateFormPost $ yikiPageForm $ Just $ toPageEdit $ page
+       defaultLayout [whamlet|
+<form method=post action=@{PageR pageName} enctype=#{enctype}>
+  ^{widget}
+  <input type=submit>
+<p>
+|]
+
 
 openConnectionCount :: Int
 openConnectionCount = 10
