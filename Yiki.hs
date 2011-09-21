@@ -46,17 +46,17 @@ instance YesodJquery Yiki
 
 data YikiPageEdit = YikiPageEdit
   { peName :: Text
-  , peBody :: Text
+  , peBody :: Textarea
   }
 
 toPageEdit :: YikiPage -> YikiPageEdit
 toPageEdit yp =
-    YikiPageEdit (pack $ yikiPageName yp) (pack $ yikiPageBody yp)
+    YikiPageEdit (pack $ yikiPageName yp) (Textarea $ pack $ yikiPageBody yp)
 
 yikiPageForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPageEdit, Widget)
 yikiPageForm ype = renderDivs $ YikiPageEdit
   <$> areq textField "Name" (peName <$> ype)
-  <*> areq textField "Body" (peBody <$> ype)
+  <*> areq textareaField "Body" (peBody <$> ype)
 
 defaultPage = [whamlet|
 <h1>Welcome to Yiki
