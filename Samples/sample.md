@@ -19,3 +19,7 @@ aaaooo[link][google]
 1. list
 
 [google]: http://google.com/  "Google"
+
+日本語
+
+日本語だよ〜
