@@ -5,7 +5,8 @@ module Yiki where
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Control.Monad.IO.Class
-import Data.Text hiding (null, map)
+import Data.Char
+import Data.Text hiding (null, map, all)
 import Data.Time
 import Database.Persist
 import Database.Persist.Sqlite
@@ -129,8 +130,17 @@ toPageEdit yp =
 
 yikiPageForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPageEdit, Widget)
 yikiPageForm ype = renderDivs $ YikiPageEdit
-  <$> areq textField "Name" (peName <$> ype)
+  <$> areq yikiPageNameField "Name" (peName <$> ype)
   <*> areq textareaField "Body" (peBody <$> ype)
+    where
+      yikiPageNameField = checkBool validateYikiPageName errorMessage textField
+
+      validateYikiPageName :: Text -> Bool
+      validateYikiPageName = all isAlphaNum . unpack
+
+      errorMessage :: Text
+      errorMessage = "Sorry sir, I could not understand what you said..."
+
 
 getEditR :: Text -> Handler RepHtml
 getEditR pageName = do
