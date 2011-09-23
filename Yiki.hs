@@ -24,7 +24,7 @@ import Yesod.Form.Jquery
 layoutWithSidebar html = do
   sidebarId <- newIdent
   contentId <- newIdent
-  defaultLayout $ do
+  defaultLayout' $ do
     addCassius [cassius|
 html
     height: 100%;
