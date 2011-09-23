@@ -180,22 +180,29 @@ getIndexR = do
 ------------------------------------------------------------
 
 layoutWithSidebar html = do
-  id <- newIdent
+  sidebarId <- newIdent
+  contentId <- newIdent
   defaultLayout $ do
     addCassius [cassius|
-##{id}
-    color: red
-    font-size: bold
+##{sidebarId}
+    color: red;
+    font-size: bold;
     width: 180px;
+    height: 100%;
     float: left;
-    margin: 0;
+    margin: 1px;
     padding: 0;
+    background: #FFFAF0;
+##{contentId}
+   width: 500px;
+   height: 100%
+   margin: 0;
+   padding: 0;
+   float: left
 |]
     addWidget [whamlet|
-<div ##{id}>
-       Sidebar!!!!
-<div>
-       ^{html}
+<div ##{sidebarId}> Sidebar!!!!
+<div ##{contentId}> ^{html}
 |]
 
 ------------------------------------------------------------
