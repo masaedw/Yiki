@@ -205,8 +205,15 @@ body
    float: left
 |]
     addWidget [whamlet|
-<div ##{sidebarId}> Sidebar!!!!
+<div ##{sidebarId}> ^{sidebar}
 <div ##{contentId}> ^{html}
+|]
+
+-- sidebar :: Monad m => GGWidget master m ()
+sidebar = [whamlet|
+   What do you want to put here?
+   -- TODO
+   -- サイドバーのコンテンツを決める入れる
 |]
 
 ------------------------------------------------------------
