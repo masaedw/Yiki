@@ -184,6 +184,10 @@ layoutWithSidebar html = do
   contentId <- newIdent
   defaultLayout $ do
     addCassius [cassius|
+html
+    height: 100%;
+body
+    height: 100%;
 ##{sidebarId}
     color: red;
     font-size: bold;
