@@ -12,6 +12,7 @@ import Database.Persist.Sqlite
 import Database.Persist.TH
 import Text.Blaze
 import Text.Pandoc
+import Text.Cassius
 import Yesod
 import Yesod.Form.Jquery
 
@@ -172,6 +173,29 @@ getIndexR = do
        <li> Title
        $forall page <- pages
          <li> #{yikiPageName page}  #{show $ yikiPageCreated page}
+|]
+
+------------------------------------------------------------
+-- Design
+------------------------------------------------------------
+
+layoutWithSidebar html = do
+  id <- newIdent
+  defaultLayout $ do
+    addCassius [cassius|
+##{id}
+    color: red
+    font-size: bold
+    width: 180px;
+    float: left;
+    margin: 0;
+    padding: 0;
+|]
+    addWidget [whamlet|
+<div ##{id}>
+       Sidebar!!!!
+<div>
+       ^{html}
 |]
 
 ------------------------------------------------------------
