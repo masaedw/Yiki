@@ -139,7 +139,10 @@ yikiPageForm ype = renderDivs $ YikiPageEdit
       validateYikiPageName = all isAlphaNum . unpack
 
       errorMessage :: Text
-      errorMessage = "Sorry sir, I could not understand what you said..."
+      errorMessage = pack $
+                     "Unacceptable page name!" ++
+                     "Available page name must compose of" ++
+                     "only alphabet and digit."
 
 
 getEditR :: Text -> Handler RepHtml
