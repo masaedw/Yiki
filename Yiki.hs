@@ -18,6 +18,64 @@ import Yesod.Form.Jquery
 
 
 ------------------------------------------------------------
+-- Design
+------------------------------------------------------------
+
+layoutWithSidebar html = do
+  sidebarId <- newIdent
+  contentId <- newIdent
+  defaultLayout $ do
+    addCassius [cassius|
+html
+    height: 100%;
+body
+    height: 100%;
+##{sidebarId}
+    color: red;
+    font-size: bold;
+    width: 180px;
+    height: 100%;
+    float: left;
+    margin: 1px;
+    padding: 0;
+    background: #FFFAF0;
+##{contentId}
+   width: 500px;
+   height: 100%
+   margin: 0;
+   padding: 0;
+   float: left
+|]
+    addWidget [whamlet|
+<div ##{sidebarId}> ^{sidebar}
+<div ##{contentId}> ^{html}
+|]
+
+-- sidebar :: Monad m => GGWidget master m ()
+sidebar = [whamlet|
+   What do you want to put here?
+   -- TODO
+   -- サイドバーのコンテンツを決める入れる
+|]
+
+defaultLayout' :: (Yesod a) => GWidget sub a () -> GHandler sub a RepHtml
+defaultLayout' w = do
+  p <- widgetToPageContent w
+  mmsg <- getMessage
+  hamletToRepHtml [hamlet|
+!!!
+
+<html>
+    <head>
+        <title>#{pageTitle p}
+        ^{pageHead p}
+    <body>
+        $maybe msg <- mmsg
+            <p .message>#{msg}
+        ^{pageBody p}
+|]
+
+------------------------------------------------------------
 -- Models
 ------------------------------------------------------------
 
@@ -174,65 +232,6 @@ getIndexR = do
        $forall page <- pages
          <li> #{yikiPageName page}  #{show $ yikiPageCreated page}
 |]
-
-------------------------------------------------------------
--- Design
-------------------------------------------------------------
-
-layoutWithSidebar html = do
-  sidebarId <- newIdent
-  contentId <- newIdent
-  defaultLayout $ do
-    addCassius [cassius|
-html
-    height: 100%;
-body
-    height: 100%;
-##{sidebarId}
-    color: red;
-    font-size: bold;
-    width: 180px;
-    height: 100%;
-    float: left;
-    margin: 1px;
-    padding: 0;
-    background: #FFFAF0;
-##{contentId}
-   width: 500px;
-   height: 100%
-   margin: 0;
-   padding: 0;
-   float: left
-|]
-    addWidget [whamlet|
-<div ##{sidebarId}> ^{sidebar}
-<div ##{contentId}> ^{html}
-|]
-
--- sidebar :: Monad m => GGWidget master m ()
-sidebar = [whamlet|
-   What do you want to put here?
-   -- TODO
-   -- サイドバーのコンテンツを決める入れる
-|]
-
-defaultLayout' :: (Yesod a) => GWidget sub a () -> GHandler sub a RepHtml
-defaultLayout' w = do
-  p <- widgetToPageContent w
-  mmsg <- getMessage
-  hamletToRepHtml [hamlet|
-!!!
-
-<html>
-    <head>
-        <title>#{pageTitle p}
-        ^{pageHead p}
-    <body>
-        $maybe msg <- mmsg
-            <p .message>#{msg}
-        ^{pageBody p}
-|]
-
 
 ------------------------------------------------------------
 -- Driver
