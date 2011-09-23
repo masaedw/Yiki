@@ -216,6 +216,24 @@ sidebar = [whamlet|
    -- サイドバーのコンテンツを決める入れる
 |]
 
+defaultLayout' :: (Yesod a) => GWidget sub a () -> GHandler sub a RepHtml
+defaultLayout' w = do
+  p <- widgetToPageContent w
+  mmsg <- getMessage
+  hamletToRepHtml [hamlet|
+!!!
+
+<html>
+    <head>
+        <title>#{pageTitle p}
+        ^{pageHead p}
+    <body>
+        $maybe msg <- mmsg
+            <p .message>#{msg}
+        ^{pageBody p}
+|]
+
+
 ------------------------------------------------------------
 -- Driver
 ------------------------------------------------------------
