@@ -117,6 +117,7 @@ data Yiki = Yiki ConnectionPool
 
 instance Yesod Yiki where
     approot _ = ""
+    defaultLayout = layoutWithSidebar
 
 instance YesodPersist Yiki where
     type YesodPersistBackend Yiki = SqlPersist
