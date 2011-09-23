@@ -110,10 +110,10 @@ getPageR :: Text -> Handler RepHtml
 getPageR pageName = do
   page <- runDB $ getPage name
   case page of
-    Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
+    Nothing -> layoutWithSidebar [whamlet|<p>no such page: #{name}|]
     Just (id,page) -> do
       let content = preEscapedString $ markdownToHtml $ yikiPageBody page
-      defaultLayout [whamlet|<p>#{content}|]
+      layoutWithSidebar [whamlet|<p>#{content}|]
   where name = unpack pageName
 
 
