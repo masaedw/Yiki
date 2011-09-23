@@ -58,6 +58,7 @@ sidebar = [whamlet|
    -- サイドバーのコンテンツを決める入れる
 |]
 
+-- Professional Programmer's Work... (See src of Yesod.Core)
 defaultLayout' :: (Yesod a) => GWidget sub a () -> GHandler sub a RepHtml
 defaultLayout' w = do
   p <- widgetToPageContent w
