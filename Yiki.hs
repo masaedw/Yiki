@@ -185,7 +185,7 @@ getPageR pageName = do
     Just (id,page) -> do
       liftIO $ print $ yikiPageBody page
       let content = preEscapedString $ markdownToHtml $ yikiPageBody page
-      defaultLayout [whamlet|<p>#{content}|]
+      defaultLayout [whamlet|^{toolbar pageName}<p>#{content}|]
   where name = unpack pageName
 
 
@@ -217,22 +217,23 @@ getEditR pageName = do
 <form method=post action=@{EditR pageName} enctype=#{enctype}>
   ^{widget}
   <input type=submit>
+  <a href=@{PageR pageName}>cancel
 <p>
 |]
 
 
 postEditR :: Text -> Handler RepHtml
-postEditR pageId = do
+postEditR pageName = do
     ((result, widget), enctype) <- runFormPost $ yikiPageForm Nothing
     case result of
         FormSuccess ype -> do
           let body = unpack $ T.filter (`notElem` "\r") $ unTextarea $ peBody ype
           let name = unpack $ peName ype
           runDB $ updatePageBody name body
-          defaultLayout [whamlet|<p>success|]
+          redirect RedirectTemporary $ PageR pageName
         _ -> defaultLayout [whamlet|
 <p>Invalid input, let's try again.
-<form method=post action=@{EditR pageId} enctype=#{enctype}>
+<form method=post action=@{EditR pageName} enctype=#{enctype}>
   ^{widget}
   <input type=submit>
 |]
@@ -257,6 +258,15 @@ $else
     <ul>
         $forall page <- pages
             <li><a href=@{PageR $ pack $ yikiPageName page}>#{yikiPageName page}</a> #{show $ yikiPageCreated page}
+|]
+
+------------------------------------------------------------
+-- Helpers
+------------------------------------------------------------
+
+toolbar name = [whamlet|
+<div .toolbar>
+  <a href=@{EditR name}>edit
 |]
 
 ------------------------------------------------------------
