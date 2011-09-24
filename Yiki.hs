@@ -95,7 +95,7 @@ getPage name = do
 updatePageBody name body = do
   now <- liftIO getCurrentTime
   updateWhere [YikiPageName ==. name]
-              [YikiPageBody =. body]
+              [YikiPageBody =. body, YikiPageUpdated =. now]
 
 getPages 0 = do
   map snd <$> selectList [] []
