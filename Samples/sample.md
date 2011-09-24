@@ -23,3 +23,9 @@ aaaooo[link][google]
 日本語
 
 日本語だよ〜
+
+    quoted
+    quotedだよ〜
+
+	tab-auoted
+	tabだよ〜
