@@ -170,10 +170,10 @@ getPageR :: Text -> Handler RepHtml
 getPageR pageName = do
   page <- runDB $ getPage name
   case page of
-    Nothing -> layoutWithSidebar [whamlet|<p>no such page: #{name}|]
+    Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
     Just (id,page) -> do
       let content = preEscapedString $ markdownToHtml $ yikiPageBody page
-      layoutWithSidebar [whamlet|<p>#{content}|]
+      defaultLayout [whamlet|<p>#{content}|]
   where name = unpack pageName
 
 
@@ -198,10 +198,10 @@ getEditR pageName = do
   -- result :: Maybe (YikiPageId, YikiPage)
   result <- runDB $ getPage $ unpack pageName
   case result of
-    Nothing -> layoutWithSidebar [whamlet|<p>no such page: #{unpack pageName}|]
+    Nothing -> defaultLayout [whamlet|<p>no such page: #{unpack pageName}|]
     Just (_,page) -> do
        ((_, widget), enctype) <- generateFormPost $ yikiPageForm $ Just $ toPageEdit $ page
-       layoutWithSidebar [whamlet|
+       defaultLayout [whamlet|
 <form method=post action=@{PageR pageName} enctype=#{enctype}>
   ^{widget}
   <input type=submit>
@@ -223,7 +223,7 @@ postDeleteR = undefined
 getIndexR :: Handler RepHtml
 getIndexR = do
   pages <- runDB $ getPages 20
-  layoutWithSidebar [whamlet|
+  defaultLayout [whamlet|
 <h1>Index
 <h2> All the articles
   $if null pages
