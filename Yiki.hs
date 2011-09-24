@@ -90,8 +90,12 @@ YikiPage
 getPage name = do
   selectFirst [YikiPageName ==. name] []
 
+getPages 0 = do
+  map snd <$> selectList [] []
 getPages n = do
   map snd <$> selectList [] [LimitTo n]
+
+getAllPages = getPages 0
 
 numOfPages = do
   Yesod.count ([] :: [Filter YikiPage])
@@ -222,7 +226,7 @@ postDeleteR = undefined
 -- display all the articles
 getIndexR :: Handler RepHtml
 getIndexR = do
-  pages <- runDB $ getPages 20
+  pages <- runDB $ getAllPages
   defaultLayout [whamlet|
 <h1>Index
 <h2> All the articles
