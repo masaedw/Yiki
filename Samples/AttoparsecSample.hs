@@ -26,9 +26,9 @@ normalLine = do
     where f (Elem x : xs) (Elem y) = (Elem $ B.append x y) : xs
           f xs y = y : xs
 
-lineChar = do
-  c <- satisfy (`B.notElem` "\r\n")
-  return $ Elem $ B.pack [c]
+          lineChar = do
+            c <- satisfy (`B.notElem` "\r\n")
+            return $ Elem $ B.pack [c]
 
 wikiLink = do
   name <- string "[[" *> A.takeWhile wikiNameChar <* string "]]"
