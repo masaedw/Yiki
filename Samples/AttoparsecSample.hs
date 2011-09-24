@@ -22,7 +22,9 @@ preLine = do
 
 normalLine = do
   l <- A.many $ choice [wikiLink, lineChar]
-  return $ Line l
+  return $ Line $ reverse $ foldl f [] l
+    where f (Elem x : xs) (Elem y) = (Elem $ B.append x y) : xs
+          f xs y = y : xs
 
 lineChar = do
   c <- satisfy (`B.notElem` "\r\n")
