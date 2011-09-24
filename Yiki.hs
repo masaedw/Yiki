@@ -224,19 +224,19 @@ postDeleteR = undefined
 
 
 -- display all the articles
+
 getIndexR :: Handler RepHtml
 getIndexR = do
   pages <- runDB $ getAllPages
   defaultLayout [whamlet|
 <h1>Index
 <h2> All the articles
-  $if null pages
-      No Articles
-  $else
-       <ul>
-       <li> Title
-       $forall page <- pages
-         <li> #{yikiPageName page}  #{show $ yikiPageCreated page}
+$if null pages
+    No Articles
+$else
+    <ul>
+        $forall page <- pages
+            <li><a href=@{PageR $ pack $ yikiPageName page}>#{yikiPageName page}</a> #{show $ yikiPageCreated page}
 |]
 
 ------------------------------------------------------------
