@@ -20,7 +20,8 @@ aaaooo[link][google]
 
 [google]: http://google.com/  "Google"
 
-日本語
+日本語[[wikiLink]]
+[[not wiki link]]
 
 日本語だよ〜
 

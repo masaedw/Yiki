@@ -16,14 +16,17 @@ mdEx = choice [preLine, normalLine] `sepBy` eol
 
 preLine = do
   q <- try $ choice [string "\t", string "    "]
-  l <- A.takeWhile lineChar
+  l <- A.takeWhile isLineChar
   return $ QuotedLine $ B.concat [q, l]
-    where lineChar = (`B.notElem` "\r\n")
+    where isLineChar = (`B.notElem` "\r\n")
 
 normalLine = do
-  l <- A.takeWhile lineChar
-  return $ Line [Elem l]
-    where lineChar = (`B.notElem` "\r\n")
+  l <- A.many $ choice [wikiLink, lineChar]
+  return $ Line l
+
+lineChar = do
+  c <- satisfy (`B.notElem` "\r\n")
+  return $ Elem $ B.pack [c]
 
 wikiLink = do
   name <- string "[[" *> A.takeWhile wikiNameChar <* string "]]"
@@ -34,7 +37,6 @@ eol = choice [try (string "\n\r"),
               try (string "\r\n"),
               string "\n",
               string "\r"]
-      <?> "end of line"
 
 main = do
   f <- B.readFile "sample.md"
