@@ -141,8 +141,8 @@ yikiPageForm ype = renderDivs $ YikiPageEdit
       errorMessage :: Text
       errorMessage = pack $
                      "Unacceptable page name!" ++
-                     "Available page name must compose of" ++
-                     "only alphabet and digit."
+                     " Available page name must be composed of" ++
+                     " only alphabet and digit."
 
 
 getEditR :: Text -> Handler RepHtml
