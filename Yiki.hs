@@ -6,17 +6,21 @@ import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Char
-import Data.Text hiding (null, map, all, filter)
+import Data.Text (Text, pack, unpack)
 import Data.Time
+import Data.List (intersperse)
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Text.Blaze
 import Text.Cassius
 import Text.Pandoc
+import Text.Printf (printf)
 import Yesod
 import Yesod.Form.Jquery
 import qualified Data.Text as T
+
+import Yiki.Parse
 
 
 ------------------------------------------------------------
@@ -116,12 +120,6 @@ insertDefaultDataIfNecessary = do
     insert $ YikiPage "home" body now now
     return ()
 
-
-markdownToHtml :: String -> String
-markdownToHtml =
-  (writeHtmlString defaultWriterOptions {writerReferenceLinks = True}) .
-  readMarkdown defaultParserState
-
 ------------------------------------------------------------
 -- Applicaiton
 ------------------------------------------------------------
@@ -156,6 +154,33 @@ mkYesod "Yiki" [parseRoutes|
 openConnectionCount :: Int
 openConnectionCount = 10
 
+
+
+-- ほんとうはこれはモデルのところに置きたい
+markdownToHtml :: (YikiRoute -> Text) -> String -> Either String String
+markdownToHtml render s =
+    case parseMarkdown s of
+      Right md ->
+          Right $
+          (writeHtmlString defaultWriterOptions {writerReferenceLinks = True}) $
+          readMarkdown defaultParserState $
+          renderMD md
+      Left msg -> Left msg
+    where
+      renderMD :: [MDLine] -> String
+      renderMD lines = concat $ intersperse "\n" $ map renderLine lines
+
+      renderLine :: MDLine -> String
+      renderLine (Line x) = concat $ map renderElem x
+      renderLine (QuotedLine x) = unpack x
+
+      renderElem :: MDElement -> String
+      renderElem (Elem x) = unpack x
+      renderElem (Yiki.Parse.Link x) = printf "<a href='%s'>%s</a>" url name
+          where url = unpack $ render $ PageR x
+                name = unpack x
+
+
 ------------------------------------------------------------
 -- Handlers
 ------------------------------------------------------------
@@ -184,9 +209,15 @@ getPageR pageName = do
   case page of
     Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
     Just (id,page) -> do
-      liftIO $ print $ yikiPageBody page
-      let content = preEscapedString $ markdownToHtml $ yikiPageBody page
-      defaultLayout [whamlet|^{toolbar pageName}<p>#{content}|]
+      render <- getUrlRender
+      let body = yikiPageBody page
+      case markdownToHtml render body of
+        Right html -> defaultLayout [whamlet|^{toolbar pageName}<p>#{preEscapedString html}|]
+        Left err -> defaultLayout [whamlet|
+^{toolbar pageName}
+<p>#{err}
+<pre>#{body}
+|]
   where name = unpack pageName
 
 

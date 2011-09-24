@@ -2,6 +2,8 @@
 
 ## This is a small header
 
+[[home]]
+
 body body body
 body body body
 
