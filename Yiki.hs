@@ -21,7 +21,7 @@ import Yesod.Form.Jquery
 -- Design
 ------------------------------------------------------------
 
-layoutWithSidebar html = do
+layoutWithSidebar content = do
   sidebarId <- newIdent
   contentId <- newIdent
   defaultLayout' $ do
@@ -48,7 +48,7 @@ body
 |]
     addWidget [whamlet|
 <div ##{sidebarId}> ^{sidebar}
-<div ##{contentId}> ^{html}
+<div ##{contentId}> ^{content}
 |]
 
 -- sidebar :: Monad m => GGWidget master m ()
