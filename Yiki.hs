@@ -5,7 +5,8 @@ module Yiki where
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Control.Monad.IO.Class
-import Data.Text hiding (null, map)
+import Data.Text hiding (null, map, filter)
+import qualified Data.Text as T
 import Data.Time
 import Database.Persist
 import Database.Persist.Sqlite
@@ -84,11 +85,17 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persist|
 YikiPage
     name String
     body String
-    created UTCTime default='now'
+    updated UTCTime default="datetime('now')"
+    created UTCTime default="datetime('now')"
 |]
 
 getPage name = do
   selectFirst [YikiPageName ==. name] []
+
+updatePageBody name body = do
+  now <- liftIO getCurrentTime
+  updateWhere [YikiPageName ==. name]
+              [YikiPageBody =. body]
 
 getPages 0 = do
   map snd <$> selectList [] []
@@ -105,7 +112,7 @@ insertDefaultDataIfNecessary = do
   when (numOfPages == 0) $ do
     body <- liftIO $ readFile "Samples/sample.md"
     now <- liftIO getCurrentTime
-    insert $ YikiPage "home" body now
+    insert $ YikiPage "home" body now now
     return ()
 
 
@@ -176,6 +183,7 @@ getPageR pageName = do
   case page of
     Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
     Just (id,page) -> do
+      liftIO $ print $ yikiPageBody page
       let content = preEscapedString $ markdownToHtml $ yikiPageBody page
       defaultLayout [whamlet|<p>#{content}|]
   where name = unpack pageName
@@ -206,7 +214,7 @@ getEditR pageName = do
     Just (_,page) -> do
        ((_, widget), enctype) <- generateFormPost $ yikiPageForm $ Just $ toPageEdit $ page
        defaultLayout [whamlet|
-<form method=post action=@{PageR pageName} enctype=#{enctype}>
+<form method=post action=@{EditR pageName} enctype=#{enctype}>
   ^{widget}
   <input type=submit>
 <p>
@@ -214,8 +222,20 @@ getEditR pageName = do
 
 
 postEditR :: Text -> Handler RepHtml
-postEditR pageId = undefined
-
+postEditR pageId = do
+    ((result, widget), enctype) <- runFormPost $ yikiPageForm Nothing
+    case result of
+        FormSuccess ype -> do
+          let body = unpack $ T.filter (`notElem` "\r") $ unTextarea $ peBody ype
+          let name = unpack $ peName ype
+          runDB $ updatePageBody name body
+          defaultLayout [whamlet|<p>success|]
+        _ -> defaultLayout [whamlet|
+<p>Invalid input, let's try again.
+<form method=post action=@{EditR pageId} enctype=#{enctype}>
+  ^{widget}
+  <input type=submit>
+|]
 
 -- delete
 
