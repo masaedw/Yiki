@@ -5,17 +5,18 @@ module Yiki where
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Control.Monad.IO.Class
-import Data.Text hiding (null, map, filter)
-import qualified Data.Text as T
+import Data.Char
+import Data.Text hiding (null, map, all, filter)
 import Data.Time
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Text.Blaze
-import Text.Pandoc
 import Text.Cassius
+import Text.Pandoc
 import Yesod
 import Yesod.Form.Jquery
+import qualified Data.Text as T
 
 
 ------------------------------------------------------------
@@ -202,8 +203,20 @@ toPageEdit yp =
 
 yikiPageForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPageEdit, Widget)
 yikiPageForm ype = renderDivs $ YikiPageEdit
-  <$> areq textField "Name" (peName <$> ype)
+  <$> areq yikiPageNameField "Name" (peName <$> ype)
   <*> areq textareaField "Body" (peBody <$> ype)
+    where
+      yikiPageNameField = checkBool validateYikiPageName errorMessage textField
+
+      validateYikiPageName :: Text -> Bool
+      validateYikiPageName = all isAlphaNum . unpack
+
+      errorMessage :: Text
+      errorMessage = pack $
+                     "Unacceptable page name!" ++
+                     " Available page name must be composed of" ++
+                     " only alphabet and digit."
+
 
 getEditR :: Text -> Handler RepHtml
 getEditR pageName = do
