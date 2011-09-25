@@ -353,6 +353,17 @@ page `toWidgetWith` routeRender = either failure success rendered
 <pre>#{body}
 |]
 
+
+getPageR' :: Text -> (Widget -> Handler RepHtml) -> Handler RepHtml
+getPageR' pageName layoutRender = do
+  page <- runDB $ getPage $ unpack pageName
+  case page of
+    Nothing -> do redirect RedirectTemporary $ EditR pageName
+    Just (id, page) -> do
+      render <- getUrlRender
+      layoutRender $ page `toWidgetWith` render
+
+
 ------------------------------------------------------------
 -- Driver
 ------------------------------------------------------------
