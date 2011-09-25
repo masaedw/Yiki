@@ -28,6 +28,8 @@ import Yiki.Parse
 ------------------------------------------------------------
 
 layoutWithSidebar content = do
+  sidebar <- runDB $ getBy $ UniqueName "sidebar"
+  urlRender <- getUrlRender
   titleId <- newIdent
   mainId <- newIdent
   sidebarId <- newIdent
@@ -82,14 +84,7 @@ h1, h2, h3
   <h1 ##{titleId}>Yiki: a simple wiki
 <div ##{mainId}>
   <div ##{contentId}> ^{content}
-  <div ##{sidebarId}> ^{sidebar}
-|]
-
--- sidebar :: Monad m => GGWidget master m ()
-sidebar = [whamlet|
-   What do you want to put here?
-   -- TODO
-   -- サイドバーのコンテンツを決める入れる
+  <div ##{sidebarId}> #{toWidgetWith sidebar urlRender}
 |]
 
 -- Professional Programmer's Work... (See src of Yesod.Core)
