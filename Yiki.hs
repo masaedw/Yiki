@@ -92,15 +92,20 @@ YikiPage
     body String
     updated UTCTime default="datetime('now')"
     created UTCTime default="datetime('now')"
+    UniqueName name
 |]
 
 getPage name = do
   selectFirst [YikiPageName ==. name] []
 
-updatePageBody name body = do
+createOrUpdatePageBody name body = do
   now <- liftIO getCurrentTime
-  updateWhere [YikiPageName ==. name]
-              [YikiPageBody =. body, YikiPageUpdated =. now]
+  result <- getBy $ UniqueName name
+  case result of
+    Just (key,_) -> update key [YikiPageBody =. body, YikiPageUpdated =. now]
+    Nothing -> do
+      insert $ YikiPage name body now now
+      return ()
 
 getPages 0 = do
   map snd <$> selectList [] []
@@ -111,6 +116,9 @@ getAllPages = getPages 0
 
 numOfPages = do
   Yesod.count ([] :: [Filter YikiPage])
+
+validateYikiPageName :: Text -> Bool
+validateYikiPageName = all isAlphaNum . unpack
 
 insertDefaultDataIfNecessary = do
   numOfPages <- numOfPages
@@ -144,7 +152,6 @@ instance YesodJquery Yiki
 
 mkYesod "Yiki" [parseRoutes|
 / HomeR GET
-/new NewR GET POST
 /pages/#Text PageR GET
 /pages/#Text/edit EditR GET POST
 /pages/#Text/delete DeleteR POST
@@ -192,14 +199,6 @@ getHomeR = getPageR "home"
 
 ---- YikiPages
 
--- create
-
-getNewR :: Handler RepHtml
-getNewR = undefined
-
-postNewR :: Handler RepHtml
-postNewR = undefined
-
 
 -- read
 
@@ -207,7 +206,7 @@ getPageR :: Text -> Handler RepHtml
 getPageR pageName = do
   page <- runDB $ getPage name
   case page of
-    Nothing -> defaultLayout [whamlet|<p>no such page: #{name}|]
+    Nothing -> do redirect RedirectTemporary $ EditR pageName
     Just (id,page) -> do
       render <- getUrlRender
       let body = yikiPageBody page
@@ -221,43 +220,30 @@ getPageR pageName = do
   where name = unpack pageName
 
 
--- update
+-- create & update
 
 data YikiPageEdit = YikiPageEdit
-  { peName :: Text
-  , peBody :: Textarea
+  { peBody :: Textarea
   }
 
 toPageEdit :: YikiPage -> YikiPageEdit
 toPageEdit yp =
-    YikiPageEdit (pack $ yikiPageName yp) (Textarea $ pack $ yikiPageBody yp)
+    YikiPageEdit $ Textarea $ pack $ yikiPageBody yp
 
-yikiPageForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPageEdit, Widget)
-yikiPageForm ype = renderDivs $ YikiPageEdit
-  <$> areq yikiPageNameField "Name" (peName <$> ype)
-  <*> areq textareaField "Body" (peBody <$> ype)
-    where
-      yikiPageNameField = checkBool validateYikiPageName errorMessage textField
-
-      validateYikiPageName :: Text -> Bool
-      validateYikiPageName = all isAlphaNum . unpack
-
-      errorMessage :: Text
-      errorMessage = pack $
-                     "Unacceptable page name!" ++
-                     " Available page name must be composed of" ++
-                     " only alphabet and digit."
-
+yikiPageEditForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPageEdit, Widget)
+yikiPageEditForm ype = renderDivs $ YikiPageEdit
+  <$> areq textareaField "" (peBody <$> ype)
 
 getEditR :: Text -> Handler RepHtml
 getEditR pageName = do
   -- result :: Maybe (YikiPageId, YikiPage)
   result <- runDB $ getPage $ unpack pageName
-  case result of
-    Nothing -> defaultLayout [whamlet|<p>no such page: #{unpack pageName}|]
-    Just (_,page) -> do
-       ((_, widget), enctype) <- generateFormPost $ yikiPageForm $ Just $ toPageEdit $ page
-       defaultLayout [whamlet|
+  let edit = case result of
+               Nothing -> YikiPageEdit $ Textarea ""
+               Just (_,page) -> toPageEdit page
+  ((_, widget), enctype) <- generateFormPost $ yikiPageEditForm $ Just edit
+  defaultLayout [whamlet|
+<h1>#{unpack pageName}
 <form method=post action=@{EditR pageName} enctype=#{enctype}>
   ^{widget}
   <input type=submit>
@@ -268,12 +254,11 @@ getEditR pageName = do
 
 postEditR :: Text -> Handler RepHtml
 postEditR pageName = do
-    ((result, widget), enctype) <- runFormPost $ yikiPageForm Nothing
+    ((result, widget), enctype) <- runFormPost $ yikiPageEditForm Nothing
     case result of
         FormSuccess ype -> do
           let body = unpack $ T.filter (`notElem` "\r") $ unTextarea $ peBody ype
-          let name = unpack $ peName ype
-          runDB $ updatePageBody name body
+          runDB $ createOrUpdatePageBody (unpack pageName) body
           redirect RedirectTemporary $ PageR pageName
         _ -> defaultLayout [whamlet|
 <p>Invalid input, let's try again.
@@ -312,6 +297,14 @@ toolbar name = [whamlet|
 <div .toolbar>
   <a href=@{EditR name}>edit
 |]
+
+yikiPageNameField = checkBool validateYikiPageName errorMessage textField
+    where
+      errorMessage :: Text
+      errorMessage = pack $
+                     "Unacceptable page name!" ++
+                     " Available page name must be composed of" ++
+                     " only alphabet and digit."
 
 ------------------------------------------------------------
 -- Driver
