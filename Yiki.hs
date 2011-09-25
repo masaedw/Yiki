@@ -80,6 +80,10 @@ defaultLayout' w = do
         $maybe msg <- mmsg
             <p .message>#{msg}
         ^{pageBody p}
+        <footer>
+          <p>
+            powerd by <a href=http://www.github.com/masaedw/Yiki/>Yiki</a><br/>
+            powerd by <a href=http://www.yesodweb.com/>yesod</a>
 |]
 
 ------------------------------------------------------------
