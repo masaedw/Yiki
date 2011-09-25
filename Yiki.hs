@@ -108,7 +108,7 @@ createOrUpdatePageBody name body = do
       return ()
 
 getPages 0 = do
-  map snd <$> selectList [] []
+  map snd <$> selectList [] [Desc YikiPageUpdated]
 getPages n = do
   map snd <$> selectList [] [LimitTo n]
 
@@ -273,14 +273,14 @@ postDeleteR :: Text -> Handler RepHtml
 postDeleteR = undefined
 
 
--- display all the articles
+-- display all articles
 
 getIndexR :: Handler RepHtml
 getIndexR = do
   pages <- runDB $ getAllPages
   defaultLayout [whamlet|
 <h1>Index
-<h2> All the articles
+<h2> All articles
 $if null pages
     No Articles
 $else
@@ -295,7 +295,7 @@ $else
 
 toolbar name = [whamlet|
 <div .toolbar>
-  <a href=@{EditR name}>edit
+  <a href=@{EditR name}>edit</a> <a href=@{IndexR}>index</a>
 |]
 
 yikiPageNameField = checkBool validateYikiPageName errorMessage textField
