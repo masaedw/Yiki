@@ -339,14 +339,14 @@ yikiPageNameField = checkBool validateYikiPageName errorMessage textField
                      " only alphabet and digit."
 
 
-toWidgetOn :: YikiPage -> (YikiRoute -> Text) -> Widget
-page `toWidgetOn` route = either failure success rendered
+toWidgetWith :: YikiPage -> (YikiRoute -> Text) -> Widget
+page `toWidgetWith` routeRender = either failure success rendered
     where
       body = yikiPageBody page
       name = pack $ yikiPageName page
 
       rendered :: Either String String
-      rendered = markdownToHtml route body
+      rendered = markdownToHtml routeRender body
 
       success :: String -> Widget
       success html = [whamlet|^{toolbar name}<p>#{preEscapedString html}|]
