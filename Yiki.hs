@@ -27,6 +27,7 @@ import Yiki.Parse
 -- Design
 ------------------------------------------------------------
 
+-- toWidgetWithとモデル定義の型がここからだと見えない。。
 layoutWithSidebar content = do
   sidebar <- runDB $ getBy $ UniqueName "sidebar"
   urlRender <- getUrlRender
