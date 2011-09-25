@@ -96,7 +96,7 @@ YikiPage
 |]
 
 getPage name = do
-  selectFirst [YikiPageName ==. name] []
+  getBy $ UniqueName name
 
 createOrUpdatePageBody name body = do
   now <- liftIO getCurrentTime
