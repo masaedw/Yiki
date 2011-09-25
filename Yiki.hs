@@ -28,6 +28,7 @@ import Yiki.Parse
 ------------------------------------------------------------
 
 layoutWithSidebar content = do
+  titleId <- newIdent
   mainId <- newIdent
   sidebarId <- newIdent
   contentId <- newIdent
@@ -37,6 +38,19 @@ html
     height: 100%;
 body
     height: 100%;
+    background-color: #EBE1AD;
+    margin: 0;
+    color: #423B0B;
+header
+    background-color: #666149;
+    color: #FFF;
+##{titleId}
+    width: 900px;
+    height: 80px;
+    position: relative;
+    margin: 0 auto;
+    padding-top: 25px;
+    color: #fff;
 ##{mainId}
     width: 900px;
     position: relative;
@@ -56,8 +70,16 @@ footer
     margin: 0 auto;
     clear: both;
     padding: 30px 0;
+footer p
+    font-size: 11px;
+    line-height: 18px;
+    text-shadow: 0 1px 0 #fff;
+h1, h2, h3
+    color: #221F66;
 |]
     addWidget [whamlet|
+<header>
+  <h1 ##{titleId}>Yiki: a simple wiki
 <div ##{mainId}>
   <div ##{contentId}> ^{content}
   <div ##{sidebarId}> ^{sidebar}
