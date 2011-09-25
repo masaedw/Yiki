@@ -122,8 +122,8 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persist|
 YikiPage
     name String
     body String
-    updated UTCTime default="datetime('now')"
-    created UTCTime default="datetime('now')"
+    updated UTCTime default=CURRENT_TIMESTAMP
+    created UTCTime default=CURRENT_TIMESTAMP
     UniqueName name
 |]
 
