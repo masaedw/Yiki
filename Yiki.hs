@@ -338,6 +338,26 @@ yikiPageNameField = checkBool validateYikiPageName errorMessage textField
                      " Available page name must be composed of" ++
                      " only alphabet and digit."
 
+
+toWidgetOn :: YikiPage -> (YikiRoute -> Text) -> Widget
+page `toWidgetOn` route = either failure success rendered
+    where
+      body = yikiPageBody page
+      name = pack $ yikiPageName page
+
+      rendered :: Either String String
+      rendered = markdownToHtml route body
+
+      success :: String -> Widget
+      success html = [whamlet|^{toolbar name}<p>#{preEscapedString html}|]
+
+      failure :: String -> Widget
+      failure err = [whamlet|
+^{toolbar name}
+<p>#{err}
+<pre>#{body}
+|]
+
 ------------------------------------------------------------
 -- Driver
 ------------------------------------------------------------
