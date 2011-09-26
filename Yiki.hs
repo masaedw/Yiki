@@ -52,6 +52,7 @@ mkYesod "Yiki" [parseRoutes|
 
 layoutWithSidebar :: GWidget sub Yiki () -> GHandler sub Yiki RepHtml
 layoutWithSidebar content = do
+  yikiArticles <- runDB $ getPages 0
   yikiSidebar <- runDB $ getPage "sidebar"
   urlRender <- getUrlRender
   let yikiSidebar' = sidebar urlRender (snd <$> yikiSidebar)
@@ -104,13 +105,20 @@ footer p
 h1, h2, h3
     color: #221F66;
 |]
+    let articleCss = listingCss sidebarId
+    addCassius articleCss
+    let articles = listingHtml sidebarId yikiArticles
     addWidget [whamlet|
 <header>
   <h1 ##{titleId}>Yiki: a simple wiki
 <div ##{mainId}>
   <div ##{contentId}> ^{content}
-  <div ##{sidebarId}> ^{yikiSidebar'}
+  <div ##{sidebarId}>
+           ^{yikiSidebar'}
+            New!
+           ^{articles}
 |]
+
 
 sidebar :: (YikiRoute -> Text) -> Maybe YikiPage -> GWidget sub Yiki ()
 sidebar routeRender = maybe redirectWidget (`toWidgetWith` routeRender)
@@ -118,6 +126,24 @@ sidebar routeRender = maybe redirectWidget (`toWidgetWith` routeRender)
       redirectWidget = [whamlet|
 <a href=@{PageR "sidebar"}> Edit Sidebar!
 <p> cutomizable sidebar..
+|]
+
+listingHtml id items = [whamlet|
+<table id=##{id}>
+  <tr>
+   <td> Articles
+   <td> Created Date
+$forall item <- items'
+  <tr>
+    <td><a href=@{PageR $ pack $ yikiPageName item}>#{yikiPageName item}
+    <td class=created>#{show $ yikiPageCreated item}
+|]
+  where
+    items' = filter ((/= "sidebar") . yikiPageName) items
+
+listingCss id = [cassius|
+table##{id}
+     border-spacing: 5px;
 |]
 
 defaultLayout' :: (Yesod a) => GWidget sub a () -> GHandler sub a RepHtml
