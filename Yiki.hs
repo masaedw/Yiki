@@ -29,8 +29,9 @@ import Yiki.Parse
 
 -- toWidgetWithとモデル定義の型がここからだと見えない。。
 layoutWithSidebar content = do
-  sidebar <- runDB $ getBy $ UniqueName "sidebar"
+  yikiSidebar <- runDB $ getPage "sidebar"
   urlRender <- getUrlRender
+  let yikiSidebar' = sidebar urlRender (snd <$> yikiSidebar)
   titleId <- newIdent
   mainId <- newIdent
   sidebarId <- newIdent
@@ -85,8 +86,15 @@ h1, h2, h3
   <h1 ##{titleId}>Yiki: a simple wiki
 <div ##{mainId}>
   <div ##{contentId}> ^{content}
-  <div ##{sidebarId}> #{toWidgetWith sidebar urlRender}
+  <div ##{sidebarId}> 
 |]
+
+sidebar :: (YikiRoute -> Text) -> Maybe YikiPage -> Widget
+sidebar routeRender = maybe redirectWidget (`toWidgetWith` routeRender)
+    where
+      redirectWidget :: Widget
+      redirectWidget = [whamlet| うーん　どうしませう。。 |]
+
 
 -- Professional Programmer's Work... (See src of Yesod.Core)
 defaultLayout' :: (Yesod a) => GWidget sub a () -> GHandler sub a RepHtml
