@@ -176,26 +176,25 @@ insertDefaultDataIfNecessary = do
     return ()
 
 markdownToHtml :: (YikiRoute -> Text) -> String -> Either String String
-markdownToHtml render s =
-    case parseMarkdown s of
-      Right md ->
-          Right $
-          (writeHtmlString defaultWriterOptions {writerReferenceLinks = True}) $
-          readMarkdown defaultParserState $
-          renderMD md
-      Left msg -> Left msg
+markdownToHtml urlRender s =
+    render <$> parseMarkdown s
     where
-      renderMD :: [MDLine] -> String
-      renderMD lines = concat $ intersperse "\n" $ map renderLine lines
+      render :: [MDLine] -> String
+      render = (writeHtmlString defaultWriterOptions {writerReferenceLinks = True}) .
+               readMarkdown defaultParserState .
+               mdRender
 
-      renderLine :: MDLine -> String
-      renderLine (Line x) = concat $ map renderElem x
-      renderLine (QuotedLine x) = unpack x
+      mdRender :: [MDLine] -> String
+      mdRender lines = concat $ intersperse "\n" $ map lineRender lines
 
-      renderElem :: MDElement -> String
-      renderElem (Elem x) = unpack x
-      renderElem (Yiki.Parse.Link x) = printf "<a href='%s'>%s</a>" url name
-          where url = unpack $ render $ PageR x
+      lineRender :: MDLine -> String
+      lineRender (Line x) = concat $ map elemRender x
+      lineRender (QuotedLine x) = unpack x
+
+      elemRender :: MDElement -> String
+      elemRender (Elem x) = unpack x
+      elemRender (Yiki.Parse.Link x) = printf "<a href='%s'>%s</a>" url name
+          where url = unpack $ urlRender $ PageR x
                 name = unpack x
 
 ------------------------------------------------------------
