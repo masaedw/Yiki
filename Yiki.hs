@@ -115,7 +115,10 @@ h1, h2, h3
 sidebar :: (YikiRoute -> Text) -> Maybe YikiPage -> GWidget sub Yiki ()
 sidebar routeRender = maybe redirectWidget (`toWidgetWith` routeRender)
     where
-      redirectWidget = [whamlet| hoge |]
+      redirectWidget = [whamlet|
+<a href=@{PageR "sidebar"}> Edit Sidebar!
+<p> cutomizable sidebar..
+|]
 
 defaultLayout' :: (Yesod a) => GWidget sub a () -> GHandler sub a RepHtml
 defaultLayout' w = do
