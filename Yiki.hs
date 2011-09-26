@@ -22,6 +22,9 @@ import qualified Data.Text as T
 
 import Yiki.Parse
 
+------------------------------------------------------------
+-- Foundation
+------------------------------------------------------------
 
 data Yiki = Yiki ConnectionPool
 
@@ -106,7 +109,7 @@ h1, h2, h3
   <h1 ##{titleId}>Yiki: a simple wiki
 <div ##{mainId}>
   <div ##{contentId}> ^{content}
-  <div ##{sidebarId}> 
+  <div ##{sidebarId}>
 |]
 
 sidebar :: (YikiRoute -> Text) -> Maybe YikiPage -> Widget
