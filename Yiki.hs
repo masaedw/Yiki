@@ -240,21 +240,13 @@ getHomeR = getPageR "home"
 
 getPageR :: Text -> Handler RepHtml
 getPageR pageName = do
-  page <- runDB $ getPage name
+  page <- runDB $ getPage $ unpack pageName
   case page of
     Nothing -> do redirect RedirectTemporary $ EditR pageName
     Just (id,page) -> do
       render <- getUrlRender
-      let body = yikiPageBody page
-      case markdownToHtml render body of
-        Right html -> defaultLayout [whamlet|^{toolbar pageName}<p>#{preEscapedString html}|]
-        Left err -> defaultLayout [whamlet|
-^{toolbar pageName}
-<p>#{err}
-<pre>#{body}
-|]
-  where name = unpack pageName
-
+      let body = page `toWidgetWith` render
+      defaultLayout [whamlet|^{toolbar pageName}^{body}|]
 
 -- create & update
 
@@ -353,14 +345,10 @@ page `toWidgetWith` routeRender = either failure success rendered
       rendered = markdownToHtml routeRender body
 
       success :: String -> GWidget sub Yiki ()
-      success html = [whamlet|^{toolbar name}<p>#{preEscapedString html}|]
+      success html = [whamlet|<p>#{preEscapedString html}|]
 
       failure :: String -> GWidget sub Yiki ()
-      failure err = [whamlet|
-^{toolbar name}
-<p>#{err}
-<pre>#{body}
-|]
+      failure err = [whamlet|<p>#{err}</p><pre>#{body}</pre>|]
 
 ------------------------------------------------------------
 -- Driver
