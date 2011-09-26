@@ -175,31 +175,6 @@ insertDefaultDataIfNecessary = do
     insert $ YikiPage "home" body now now
     return ()
 
-------------------------------------------------------------
--- Applicaiton
-------------------------------------------------------------
-
-instance Yesod Yiki where
-    approot _ = ""
-
-instance YesodPersist Yiki where
-    type YesodPersistBackend Yiki = SqlPersist
-
-    runDB action = liftIOHandler $ do
-      Yiki pool <- getYesod
-      runSqlPool action pool
-
-instance RenderMessage Yiki FormMessage where
-    renderMessage _ _ = defaultFormMessage
-
-instance YesodJquery Yiki
-
-openConnectionCount :: Int
-openConnectionCount = 10
-
-
-
--- ほんとうはこれはモデルのところに置きたい
 markdownToHtml :: (YikiRoute -> Text) -> String -> Either String String
 markdownToHtml render s =
     case parseMarkdown s of
@@ -223,6 +198,27 @@ markdownToHtml render s =
           where url = unpack $ render $ PageR x
                 name = unpack x
 
+------------------------------------------------------------
+-- Applicaiton
+------------------------------------------------------------
+
+instance Yesod Yiki where
+    approot _ = ""
+
+instance YesodPersist Yiki where
+    type YesodPersistBackend Yiki = SqlPersist
+
+    runDB action = liftIOHandler $ do
+      Yiki pool <- getYesod
+      runSqlPool action pool
+
+instance RenderMessage Yiki FormMessage where
+    renderMessage _ _ = defaultFormMessage
+
+instance YesodJquery Yiki
+
+openConnectionCount :: Int
+openConnectionCount = 10
 
 ------------------------------------------------------------
 -- Handlers
