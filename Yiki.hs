@@ -50,7 +50,7 @@ mkYesod "Yiki" [parseRoutes|
 -- Design
 ------------------------------------------------------------
 
--- toWidgetWithとモデル定義の型がここからだと見えない。。
+layoutWithSidebar :: GWidget sub Yiki () -> GHandler sub Yiki RepHtml
 layoutWithSidebar content = do
   yikiSidebar <- runDB $ getPage "sidebar"
   urlRender <- getUrlRender
@@ -109,17 +109,14 @@ h1, h2, h3
   <h1 ##{titleId}>Yiki: a simple wiki
 <div ##{mainId}>
   <div ##{contentId}> ^{content}
-  <div ##{sidebarId}>
+  <div ##{sidebarId}> ^{yikiSidebar'}
 |]
 
-sidebar :: (YikiRoute -> Text) -> Maybe YikiPage -> Widget
+sidebar :: (YikiRoute -> Text) -> Maybe YikiPage -> GWidget sub Yiki ()
 sidebar routeRender = maybe redirectWidget (`toWidgetWith` routeRender)
     where
-      redirectWidget :: Widget
-      redirectWidget = [whamlet| うーん　どうしませう。。 |]
+      redirectWidget = [whamlet| hoge |]
 
-
--- Professional Programmer's Work... (See src of Yesod.Core)
 defaultLayout' :: (Yesod a) => GWidget sub a () -> GHandler sub a RepHtml
 defaultLayout' w = do
   p <- widgetToPageContent w
@@ -346,7 +343,7 @@ yikiPageNameField = checkBool validateYikiPageName errorMessage textField
                      " only alphabet and digit."
 
 
-toWidgetWith :: YikiPage -> (YikiRoute -> Text) -> Widget
+toWidgetWith :: YikiPage -> (YikiRoute -> Text) -> GWidget sub Yiki ()
 page `toWidgetWith` routeRender = either failure success rendered
     where
       body = yikiPageBody page
@@ -355,10 +352,10 @@ page `toWidgetWith` routeRender = either failure success rendered
       rendered :: Either String String
       rendered = markdownToHtml routeRender body
 
-      success :: String -> Widget
+      success :: String -> GWidget sub Yiki ()
       success html = [whamlet|^{toolbar name}<p>#{preEscapedString html}|]
 
-      failure :: String -> Widget
+      failure :: String -> GWidget sub Yiki ()
       failure err = [whamlet|
 ^{toolbar name}
 <p>#{err}
