@@ -54,7 +54,7 @@ layoutWithSidebar :: GWidget sub Yiki () -> GHandler sub Yiki RepHtml
 layoutWithSidebar content = do
   yikiSidebar <- runDB $ getPage "sidebar"
   urlRender <- getUrlRender
-  let yikiSidebar' = sidebar urlRender (snd <$> yikiSidebar)
+  let sidebar = toSidebarWith (snd <$> yikiSidebar) urlRender
   titleId <- newIdent
   mainId <- newIdent
   sidebarId <- newIdent
@@ -109,11 +109,11 @@ h1, h2, h3
   <h1 ##{titleId}>Yiki: a simple wiki
 <div ##{mainId}>
   <div ##{contentId}> ^{content}
-  <div ##{sidebarId}> ^{yikiSidebar'}
+  <div ##{sidebarId}> ^{sidebar}
 |]
 
-sidebar :: (YikiRoute -> Text) -> Maybe YikiPage -> GWidget sub Yiki ()
-sidebar routeRender = maybe redirectWidget (`toWidgetWith` routeRender)
+toSidebarWith :: Maybe YikiPage -> (YikiRoute -> Text) -> GWidget sub Yiki ()
+page `toSidebarWith` routeRender = maybe redirectWidget (`toWidgetWith` routeRender) page
     where
       redirectWidget = [whamlet| hoge |]
 
