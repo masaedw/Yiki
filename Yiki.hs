@@ -23,6 +23,26 @@ import qualified Data.Text as T
 import Yiki.Parse
 
 
+data Yiki = Yiki ConnectionPool
+
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persist|
+YikiPage
+    name String
+    body String
+    updated UTCTime default=CURRENT_TIMESTAMP
+    created UTCTime default=CURRENT_TIMESTAMP
+    UniqueName name
+|]
+
+
+mkYesod "Yiki" [parseRoutes|
+/ HomeR GET
+/pages/#Text PageR GET
+/pages/#Text/edit EditR GET POST
+/pages/#Text/delete DeleteR POST
+/index IndexR GET
+|]
+
 ------------------------------------------------------------
 -- Design
 ------------------------------------------------------------
@@ -122,15 +142,6 @@ defaultLayout' w = do
 -- Models
 ------------------------------------------------------------
 
-share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persist|
-YikiPage
-    name String
-    body String
-    updated UTCTime default=CURRENT_TIMESTAMP
-    created UTCTime default=CURRENT_TIMESTAMP
-    UniqueName name
-|]
-
 getPage name = do
   getBy $ UniqueName name
 
@@ -167,9 +178,6 @@ insertDefaultDataIfNecessary = do
 ------------------------------------------------------------
 -- Applicaiton
 ------------------------------------------------------------
-
-data Yiki = Yiki ConnectionPool
-
 instance Yesod Yiki where
     approot _ = ""
     defaultLayout = layoutWithSidebar
@@ -185,14 +193,6 @@ instance RenderMessage Yiki FormMessage where
     renderMessage _ _ = defaultFormMessage
 
 instance YesodJquery Yiki
-
-mkYesod "Yiki" [parseRoutes|
-/ HomeR GET
-/pages/#Text PageR GET
-/pages/#Text/edit EditR GET POST
-/pages/#Text/delete DeleteR POST
-/index IndexR GET
-|]
 
 openConnectionCount :: Int
 openConnectionCount = 10
