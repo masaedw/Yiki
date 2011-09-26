@@ -50,8 +50,8 @@ mkYesod "Yiki" [parseRoutes|
 -- Design
 ------------------------------------------------------------
 
-layoutWithSidebar :: GWidget sub Yiki () -> GHandler sub Yiki RepHtml
-layoutWithSidebar content = do
+sidebarLayout :: Widget -> Handler RepHtml
+sidebarLayout content = do
   yikiSidebar <- runDB $ getPage "sidebar"
   urlRender <- getUrlRender
   let sidebar = toSidebarWith (snd <$> yikiSidebar) urlRender
@@ -112,12 +112,12 @@ h1, h2, h3
   <div ##{sidebarId}> ^{sidebar}
 |]
 
-toSidebarWith :: Maybe YikiPage -> (YikiRoute -> Text) -> GWidget sub Yiki ()
+toSidebarWith :: Maybe YikiPage -> (YikiRoute -> Text) -> Widget
 page `toSidebarWith` routeRender = maybe redirectWidget (`toWidgetWith` routeRender) page
     where
       redirectWidget = [whamlet| hoge |]
 
-defaultLayout' :: (Yesod a) => GWidget sub a () -> GHandler sub a RepHtml
+defaultLayout' :: Widget -> Handler RepHtml
 defaultLayout' w = do
   p <- widgetToPageContent w
   mmsg <- getMessage
@@ -178,9 +178,9 @@ insertDefaultDataIfNecessary = do
 ------------------------------------------------------------
 -- Applicaiton
 ------------------------------------------------------------
+
 instance Yesod Yiki where
     approot _ = ""
-    defaultLayout = layoutWithSidebar
 
 instance YesodPersist Yiki where
     type YesodPersistBackend Yiki = SqlPersist
@@ -246,7 +246,7 @@ getPageR pageName = do
     Just (id,page) -> do
       render <- getUrlRender
       let body = page `toWidgetWith` render
-      defaultLayout [whamlet|^{toolbar pageName}^{body}|]
+      sidebarLayout [whamlet|^{toolbar pageName}^{body}|]
 
 -- create & update
 
@@ -270,7 +270,7 @@ getEditR pageName = do
                Nothing -> YikiPageEdit $ Textarea ""
                Just (_,page) -> toPageEdit page
   ((_, widget), enctype) <- generateFormPost $ yikiPageEditForm $ Just edit
-  defaultLayout [whamlet|
+  sidebarLayout [whamlet|
 <h1>#{unpack pageName}
 <form method=post action=@{EditR pageName} enctype=#{enctype}>
   ^{widget}
@@ -288,7 +288,7 @@ postEditR pageName = do
           let body = unpack $ T.filter (`notElem` "\r") $ unTextarea $ peBody ype
           runDB $ createOrUpdatePageBody (unpack pageName) body
           redirect RedirectTemporary $ PageR pageName
-        _ -> defaultLayout [whamlet|
+        _ -> sidebarLayout [whamlet|
 <p>Invalid input, let's try again.
 <form method=post action=@{EditR pageName} enctype=#{enctype}>
   ^{widget}
@@ -306,7 +306,7 @@ postDeleteR = undefined
 getIndexR :: Handler RepHtml
 getIndexR = do
   pages <- runDB $ getAllPages
-  defaultLayout [whamlet|
+  sidebarLayout [whamlet|
 <h1>Index
 <h2> All articles
 $if null pages
@@ -335,7 +335,7 @@ yikiPageNameField = checkBool validateYikiPageName errorMessage textField
                      " only alphabet and digit."
 
 
-toWidgetWith :: YikiPage -> (YikiRoute -> Text) -> GWidget sub Yiki ()
+toWidgetWith :: YikiPage -> (YikiRoute -> Text) -> Widget
 page `toWidgetWith` routeRender = either failure success rendered
     where
       body = yikiPageBody page
@@ -344,10 +344,10 @@ page `toWidgetWith` routeRender = either failure success rendered
       rendered :: Either String String
       rendered = markdownToHtml routeRender body
 
-      success :: String -> GWidget sub Yiki ()
+      success :: String -> Widget
       success html = [whamlet|<p>#{preEscapedString html}|]
 
-      failure :: String -> GWidget sub Yiki ()
+      failure :: String -> Widget
       failure err = [whamlet|<p>#{err}</p><pre>#{body}</pre>|]
 
 ------------------------------------------------------------
