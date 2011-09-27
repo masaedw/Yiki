@@ -163,7 +163,6 @@ getAllPages = getPages 0
 
 numOfPages = do
   Yesod.count ([] :: [Filter YikiPage])
-
 validateYikiPageName :: Text -> Bool
 validateYikiPageName = all isAlphaNum . unpack
 
@@ -254,8 +253,27 @@ toPageEdit yp =
     YikiPageEdit $ Textarea $ pack $ yikiPageBody yp
 
 yikiPageEditForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPageEdit, Widget)
-yikiPageEditForm ype = renderDivs $ YikiPageEdit
-  <$> areq textareaField "" (peBody <$> ype)
+yikiPageEditForm ype _ = do
+    (nameRes, nameView) <- mreq textareaField "" (peBody <$> ype)
+    let yikiPageEditRes = YikiPageEdit <$> nameRes
+    let editForm = do
+          toWidget [cassius|
+textarea##{fvId nameView}
+  resize: none;
+  font-size: medium;
+  width: 110%;
+  height: 500px;
+  border: 3px solid #cccccc;
+  padding: 5px;
+  font-family: Tahoma, sans-serif;
+  background-image: url(bg.gif);
+  background-position: bottom right;
+  background-repeat: no-repeat;
+|]
+          [whamlet|
+  ^{fvInput nameView}
+|]
+    return (yikiPageEditRes, editForm)
 
 getEditR :: Text -> Handler RepHtml
 getEditR pageName = do
