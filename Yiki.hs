@@ -83,7 +83,7 @@ header
     position: relative;
     margin: 0 auto;
 ##{sidebarId}
-    width: 310px;
+    width: 240px;
     float: right;
     padding-bottom: 40px;
 ##{contentId}
@@ -261,7 +261,7 @@ yikiPageEditForm ype _ = do
 textarea##{fvId nameView}
   resize: none;
   font-size: medium;
-  width: 110%;
+  width: 125%;
   height: 500px;
   border: 3px solid #cccccc;
   padding: 5px;
