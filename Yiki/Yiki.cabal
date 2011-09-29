@@ -33,6 +33,8 @@ library
     exposed-modules: Application
     other-modules:   Foundation
                      Model
+                     Model.Accessor
+                     Model.Parse
                      Settings
                      Settings.StaticFiles
                      Handler.Root
