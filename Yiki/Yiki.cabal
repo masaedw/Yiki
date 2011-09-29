@@ -59,7 +59,7 @@ executable         Yiki
                  , yesod-auth   >= 0.7
                  , yesod-static
                  , blaze-html
-                 , yesod-form
+                 , yesod-form   == 0.3.1
                  , mime-mail
                  , clientsession
                  , wai-extra
