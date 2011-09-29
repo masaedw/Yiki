@@ -47,6 +47,7 @@ getAllPages = getPages 0
 
 numOfPages = do
   Yesod.count ([] :: [Filter YikiPage])
+
 validateYikiPageName :: Text -> Bool
 validateYikiPageName = T.all isAlphaNum
 
