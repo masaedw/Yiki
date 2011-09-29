@@ -103,6 +103,16 @@ footer p
     text-shadow: 0 1px 0 #fff;
 h1, h2, h3
     color: #221F66;
+textarea
+    resize: none;
+    font-size: medium;
+    width: 125%;
+    height: 500px;
+    border: 3px solid #cccccc;
+    padding: 5px;
+    font-family: Tahoma, sans-serif;
+    background-position: bottom right;
+    background-repeat: no-repeat;
 |]
     addWidget [whamlet|
 <header>
@@ -253,27 +263,7 @@ toPageEdit yp =
     YikiPageEdit $ Textarea $ pack $ yikiPageBody yp
 
 yikiPageEditForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPageEdit, Widget)
-yikiPageEditForm ype _ = do
-    (nameRes, nameView) <- mreq textareaField "" (peBody <$> ype)
-    let yikiPageEditRes = YikiPageEdit <$> nameRes
-    let editForm = do
-          toWidget [cassius|
-textarea##{fvId nameView}
-  resize: none;
-  font-size: medium;
-  width: 125%;
-  height: 500px;
-  border: 3px solid #cccccc;
-  padding: 5px;
-  font-family: Tahoma, sans-serif;
-  background-image: url(bg.gif);
-  background-position: bottom right;
-  background-repeat: no-repeat;
-|]
-          [whamlet|
-  ^{fvInput nameView}
-|]
-    return (yikiPageEditRes, editForm)
+yikiPageEditForm ype = renderDivs $ YikiPageEdit <$> areq textareaField "" (peBody <$> ype)
 
 getEditR :: Text -> Handler RepHtml
 getEditR pageName = do
