@@ -227,9 +227,3 @@ Thank you
 
 instance RenderMessage Yiki FormMessage where
     renderMessage _ _ = defaultFormMessage
-
-
--- instance YesodJquery Yiki
-
--- openConnectionCount :: Int
--- openConnectionCount = 10
