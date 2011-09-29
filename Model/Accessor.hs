@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings, MultiParamTypeClasses #-}
 module Model.Accessor where
 
-import Model.Parse
+import Yiki.Parse
 import Foundation
 import Model
 
@@ -86,6 +86,6 @@ markdownToHtml urlRender s =
 
       elemRender :: MDElement -> String
       elemRender (Elem x) = unpack x
-      elemRender (Model.Parse.Link x) = printf "<a href='%s'>%s</a>" url name
+      elemRender (Yiki.Parse.Link x) = printf "<a href='%s'>%s</a>" url name
           where url = unpack $ urlRender $ PageR x
                 name = unpack x

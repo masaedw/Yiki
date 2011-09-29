@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Model.Parse where
+module Yiki.Parse where
 
 import Control.Applicative
 import Data.Attoparsec.Text
