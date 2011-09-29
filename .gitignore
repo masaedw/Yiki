@@ -1,2 +1,4 @@
 *.aes
 *.sqlite
+*.hi
+*.o
