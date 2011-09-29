@@ -7,11 +7,13 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Data.Char
 import Data.Text (Text, pack, unpack)
+import Data.Text.IO (readFile)
 import Data.Time
 import Data.List (intersperse)
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
+import Prelude hiding (readFile)
 import Text.Blaze
 import Text.Cassius
 import Text.Pandoc
@@ -30,8 +32,8 @@ data Yiki = Yiki ConnectionPool
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persist|
 YikiPage
-    name String
-    body String
+    name Text
+    body Text
     updated UTCTime default=CURRENT_TIMESTAMP
     created UTCTime default=CURRENT_TIMESTAMP
     UniqueName name
@@ -174,7 +176,7 @@ getAllPages = getPages 0
 numOfPages = do
   Yesod.count ([] :: [Filter YikiPage])
 validateYikiPageName :: Text -> Bool
-validateYikiPageName = all isAlphaNum . unpack
+validateYikiPageName = T.all isAlphaNum
 
 insertDefaultDataIfNecessary = do
   numOfPages <- numOfPages
@@ -244,7 +246,7 @@ getHomeR = getPageR "home"
 
 getPageR :: Text -> Handler RepHtml
 getPageR pageName = do
-  page <- runDB $ getPage $ unpack pageName
+  page <- runDB $ getPage pageName
   case page of
     Nothing -> do redirect RedirectTemporary $ EditR pageName
     Just (id,page) -> do
@@ -260,7 +262,7 @@ data YikiPageEdit = YikiPageEdit
 
 toPageEdit :: YikiPage -> YikiPageEdit
 toPageEdit yp =
-    YikiPageEdit $ Textarea $ pack $ yikiPageBody yp
+    YikiPageEdit $ Textarea $ yikiPageBody yp
 
 yikiPageEditForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult YikiPageEdit, Widget)
 yikiPageEditForm ype = renderDivs $ YikiPageEdit <$> areq textareaField "" (peBody <$> ype)
@@ -268,7 +270,7 @@ yikiPageEditForm ype = renderDivs $ YikiPageEdit <$> areq textareaField "" (peBo
 getEditR :: Text -> Handler RepHtml
 getEditR pageName = do
   -- result :: Maybe (YikiPageId, YikiPage)
-  result <- runDB $ getPage $ unpack pageName
+  result <- runDB $ getPage pageName
   let edit = case result of
                Nothing -> YikiPageEdit $ Textarea ""
                Just (_,page) -> toPageEdit page
@@ -288,8 +290,8 @@ postEditR pageName = do
     ((result, widget), enctype) <- runFormPost $ yikiPageEditForm Nothing
     case result of
         FormSuccess ype -> do
-          let body = unpack $ T.filter (`notElem` "\r") $ unTextarea $ peBody ype
-          runDB $ createOrUpdatePageBody (unpack pageName) body
+          let body = T.filter (`notElem` "\r") $ unTextarea $ peBody ype
+          runDB $ createOrUpdatePageBody pageName body
           redirect RedirectTemporary $ PageR pageName
         _ -> sidebarLayout [whamlet|
 <p>Invalid input, let's try again.
@@ -317,7 +319,7 @@ $if null pages
 $else
     <ul>
         $forall page <- pages
-            <li><a href=@{PageR $ pack $ yikiPageName page}>#{yikiPageName page}</a> #{show $ yikiPageCreated page}
+            <li><a href=@{PageR $ yikiPageName page}>#{yikiPageName page}</a> #{show $ yikiPageCreated page}
 |]
 
 ------------------------------------------------------------
@@ -342,10 +344,10 @@ toWidgetWith :: YikiPage -> (YikiRoute -> Text) -> Widget
 page `toWidgetWith` routeRender = either failure success rendered
     where
       body = yikiPageBody page
-      name = pack $ yikiPageName page
+      name = yikiPageName page
 
       rendered :: Either String String
-      rendered = markdownToHtml routeRender body
+      rendered = markdownToHtml routeRender $ unpack body
 
       success :: String -> Widget
       success html = [whamlet|<p>#{preEscapedString html}|]
