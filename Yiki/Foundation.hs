@@ -22,7 +22,7 @@ import Settings.StaticFiles
 import Yesod.Auth
 import Yesod.Auth.OpenId
 import Yesod.Auth.Email
-import Yesod.Form.Types ()
+import Yesod.Form.Jquery
 import Yesod.Logger (Logger, logLazyText)
 import qualified Settings
 import System.Directory
@@ -228,8 +228,7 @@ Thank you
 instance RenderMessage Yiki FormMessage where
     renderMessage _ _ = defaultFormMessage
 
+instance YesodJquery Yiki
 
--- instance YesodJquery Yiki
-
--- openConnectionCount :: Int
--- openConnectionCount = 10
+openConnectionCount :: Int
+openConnectionCount = 10

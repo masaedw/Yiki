@@ -1,12 +1,15 @@
 {-# LANGUAGE TemplateHaskell, QuasiQuotes, OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Handler.Root where
 
 import Model.Accessor
 import Foundation
 
-
 import Control.Applicative
-import Data.Text
+import Data.Text hiding (null)
+import qualified Data.Text as T hiding (null)
+import Text.Blaze
+import qualified Yesod.Form.Fields as F
 
 
 -- This is a handler function for the GET request method on the HomeR
@@ -83,6 +86,23 @@ postDeleteR :: Text -> Handler RepHtml
 postDeleteR = undefined
 
 
+-- display all articles
+
+getIndexR :: Handler RepHtml
+getIndexR = do
+  pages <- runDB $ getAllPages
+  sidebarLayout [whamlet|
+<h1>Index
+<h2> All articles
+$if null pages
+    No Articles
+$else
+    <ul>
+        $forall page <- pages
+            <li><a href=@{PageR $ yikiPageName page}>#{yikiPageName page}</a> #{show $ yikiPageCreated page}
+|]
+
+
 ------------------------------------------------------------
 -- Helpers
 ------------------------------------------------------------
@@ -92,6 +112,8 @@ toolbar name = [whamlet|
   <a href=@{EditR name}>edit</a> <a href=@{IndexR}>index</a>
 |]
 
+yikiPageNameField :: (RenderMessage master FormMessage)
+                    => Field sub master Text
 yikiPageNameField = checkBool validateYikiPageName errorMessage textField
     where
       errorMessage :: Text
