@@ -7,7 +7,7 @@ import Foundation
 
 
 import Control.Applicative
-import Data.Text
+import Data.Text (Text, pack, unpack)
 import Text.Blaze
 import qualified Data.Text as T
 
@@ -85,6 +85,21 @@ postEditR pageName = do
 postDeleteR :: Text -> Handler RepHtml
 postDeleteR = undefined
 
+-- display all articles
+
+getIndexR :: Handler RepHtml
+getIndexR = do
+  pages <- runDB $ getAllPages
+  sidebarLayout [whamlet|
+<h1>Index
+<h2> All articles
+$if null pages
+    No Articles
+$else
+    <ul>
+        $forall page <- pages
+            <li><a href=@{PageR $ yikiPageName page}>#{yikiPageName page}</a> #{show $ yikiPageCreated page}
+|]
 
 ------------------------------------------------------------
 -- Helpers
