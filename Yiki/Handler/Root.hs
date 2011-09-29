@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell, QuasiQuotes, OverloadedStrings #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 module Handler.Root where
 
 import Model.Accessor
@@ -7,6 +8,8 @@ import Foundation
 
 import Control.Applicative
 import Data.Text
+import Text.Blaze
+import qualified Data.Text as T
 
 
 -- This is a handler function for the GET request method on the HomeR
