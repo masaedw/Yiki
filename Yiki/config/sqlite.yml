@@ -1,5 +1,5 @@
 Default: &defaults
-  database: Yiki.sqlite3
+  database: yiki.sqlite
 
 Development:
   <<: *defaults
