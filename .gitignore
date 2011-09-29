@@ -3,4 +3,7 @@
 *.sqlite3
 *.hi
 *.o
+
 Yiki/dist/
+dist/
+tmp/
