@@ -2,8 +2,8 @@ name:              Yiki
 version:           0.0.0
 license:           BSD3
 license-file:      LICENSE
-author:
-maintainer:
+author:            Team Oji-Kamiya.
+maintainer:        Team Oji-Kamiya.
 synopsis:          The greatest Yesod web application ever.
 description:       I'm sure you can say something clever here if you try.
 category:          Web
