@@ -1,3 +1,4 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
 module Model.Accessor where
 
 import Model.Parse
@@ -12,13 +13,14 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Char
 import Data.List (intersperse)
 import Data.Text (Text, pack, unpack)
-import qualified Data.Text as T
 import Data.Time (getCurrentTime, UTCTime)
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Text.Pandoc
 import Text.Printf (printf)
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 
 ------------------------------------------------------------
 -- Models
@@ -51,9 +53,9 @@ validateYikiPageName = T.all isAlphaNum
 insertDefaultDataIfNecessary = do
   numOfPages <- numOfPages
   when (numOfPages == 0) $ do
-    body <- liftIO $ readFile "Samples/sample.md"
+    body <- liftIO $ T.readFile "Samples/sample.md"
     now <- liftIO getCurrentTime
-    insert $ YikiPage "home" body now now
+    insert $ YikiPage (pack "home") body now now
     return ()
 
 markdownToHtml :: (YikiRoute -> Text) -> String -> Either String String
