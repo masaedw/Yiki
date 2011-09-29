@@ -1,3 +1,4 @@
 *.aes
 *.sqlite
+*.sqlite3
 dist
