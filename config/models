@@ -1,0 +1,16 @@
+User
+    ident Text
+    password Text Maybe
+    UniqueUser ident
+Email
+    email Text
+    user UserId Maybe
+    verkey Text Maybe
+    UniqueEmail email
+
+YikiPage
+    name Text
+    body Text
+    updated UTCTime defautl=CURRENT_TIMESTAMP
+    created UTCTime default=CURRENT_TIMESTAMP
+    UniqueName name
