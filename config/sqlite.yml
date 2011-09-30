@@ -1,0 +1,17 @@
+Default: &defaults
+  database: Yiki.sqlite3
+
+Development:
+  <<: *defaults
+
+Test:
+  database: Yiki_test.sqlite3
+  <<: *defaults
+
+Staging:
+  database: Yiki_staging.sqlite3
+  <<: *defaults
+
+Production:
+  database: Yiki_production.sqlite3
+  <<: *defaults
