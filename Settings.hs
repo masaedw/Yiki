@@ -142,42 +142,48 @@ runConnectionPool :: MonadControlIO m => SqlPersist m a -> ConnectionPool -> m a
 runConnectionPool = runSqlPool
 
 data Database = Sqlite | Postgresql
+              deriving Show
 
-withDbPool :: MonadControlIO m => AppEnvironment -> Text -> Int -> (ConnectionPool -> m a) -> m a
-withDbPool env cs connPoolsize f = do
-     db <- liftIO $ toLower . fst <$> loadConfStr "database" "config/database.yml" env
-     let withDbPool' = case db of
-                          "sqlite" -> withSqlitePool
-                          "postgresql" -> withPostgresqlPool
-                          _ -> error "not implemented database."
-     withDbPool' cs connPoolsize f
+toDb :: Text -> Database
+toDb "sqlite" = Sqlite
+toDb "postgresql" = Postgresql
+toDb _ = error "unsupported database"
 
-loadConfStr :: String -> String -> AppEnvironment -> IO (Text, [(String, Object String Text)])
-loadConfStr key confFile env = do
+withPoolOf :: MonadControlIO m => Database -> Text -> Int -> (ConnectionPool -> m a) -> m a
+withPoolOf db = case db of
+                  Sqlite -> withSqlitePool
+                  Postgresql -> withPostgresqlPool
+
+
+loadDbConf :: AppEnvironment -> String -> IO (Text, [(String, Object String Text)])
+loadDbConf env confFile = do
             allDBs <- (join $ YAML.decodeFile (confFile :: String)) >>= fromMapping
             settings <- lookupMapping (show env) allDBs
-            database <- lookupScalar key settings
+            database <- lookupScalar "database" settings
             return (database, settings)
 
 loadConnStr :: AppEnvironment -> Database -> IO Text
-loadConnStr env Sqlite     = fst <$> loadConfStr "database" "config/sqlite.yml" env
+loadConnStr env Sqlite     = fst <$> loadDbConf env "config/sqlite.yml"
 loadConnStr env Postgresql = do
-  (database, settings) <- loadConfStr "database" "config/postgresql.yml" env
+  (database, settings) <- loadDbConf env "config/postgresql.yml"
   connPart <- fmap T.concat $ forM (["user", "password", "host", "port"]) $ \key -> do
     value <- lookupScalar key settings
     return $ [st| #{key}=#{value} |]
   return $ [st|#{connPart} dbname=#{database}|]
-loadConnStr _ _ = error "unsupported database."
 
 withConnectionPool :: MonadControlIO m => AppConfig -> (ConnectionPool -> m a) -> m a
 withConnectionPool conf f = do
-    cs <- liftIO $ loadConnStr env
-    withDbPool env cs (connectionPoolSize conf) f
+    cs <- liftIO loadConnStr
+    db <- liftIO database
+    withPoolOf db cs (connectionPoolSize conf) f
   where
     -- | The database connection string. The meaning of this string is backend-
     -- specific.
-    loadConnStr :: AppEnvironment -> IO Text
-    loadConnStr env = fst <$> loadConfStr "database" "config/sqlite.yml" env
+    loadConnStr :: IO Text
+    loadConnStr = fst <$> loadDbConf env "config/sqlite.yml"
+
+    database :: IO Database
+    database = toDb . fst <$> loadDbConf env "config/database.yml"
 
     env = appEnv conf
 
