@@ -1,0 +1,17 @@
+Default: &defaults
+  database: postgresql
+
+Development:
+  <<: *defaults
+
+Test:
+  database: sqlite
+  <<: *defaults
+
+Staging:
+  database: sqlite
+  <<: *defaults
+
+Production:
+  database: postgresql
+  <<: *defaults
