@@ -31,14 +31,16 @@ import qualified Text.Shakespeare.Text as S
 import Text.Shakespeare.Text (st)
 import Language.Haskell.TH.Syntax
 import Database.Persist.Sqlite
+import Database.Persist.Postgresql
 
 import Yesod (liftIO, MonadControlIO, addWidget, addCassius, addJulius, addLucius, whamletFile)
 import Data.Monoid (mempty)
 import System.Directory (doesFileExist)
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, toLower)
 import Data.Object
 import qualified Data.Object.Yaml as YAML
 import Control.Monad (join)
+import Control.Applicative ((<$>))
 
 data AppEnvironment = Test
                     | Development
@@ -136,6 +138,21 @@ staticRoot conf = [st|#{appRoot conf}/static|]
 -- them yourself.
 runConnectionPool :: MonadControlIO m => SqlPersist m a -> ConnectionPool -> m a
 runConnectionPool = runSqlPool
+
+withDbPool :: MonadControlIO m => AppEnvironment -> Text -> Int -> (ConnectionPool -> m a) -> m a
+withDbPool env cs connPoolsize f = do
+     db <- liftIO $ toLower <$> loadConfStr "config/database.yml" env
+     let withDbPool' = case db of
+                          "sqlite" -> withSqlitePool
+                          "postgresql" -> withPostgresqlPool
+                          _ -> error "not implemented database."
+     withDbPool' cs connPoolsize f
+
+loadConfStr :: String -> AppEnvironment -> IO Text
+loadConfStr confFile env = do
+            allDBs <- (join $ YAML.decodeFile (confFile :: String)) >>= fromMapping
+            db <- lookupMapping (show env) allDBs
+            lookupScalar "database" db
 
 withConnectionPool :: MonadControlIO m => AppConfig -> (ConnectionPool -> m a) -> m a
 withConnectionPool conf f = do
