@@ -156,14 +156,15 @@ loadConfStr key confFile env = do
 
 withConnectionPool :: MonadControlIO m => AppConfig -> (ConnectionPool -> m a) -> m a
 withConnectionPool conf f = do
-    cs <- liftIO $ loadConnStr (appEnv conf)
-    withSqlitePool cs (connectionPoolSize conf) f
+    cs <- liftIO $ loadConnStr env
+    withDbPool env cs (connectionPoolSize conf) f
   where
     -- | The database connection string. The meaning of this string is backend-
     -- specific.
     loadConnStr :: AppEnvironment -> IO Text
     loadConnStr = loadConfStr "database" "config/sqlite.yml"
 
+    env = appEnv conf
 
 -- Example of making a dynamic configuration static
 -- use /return $(mkConnStr Production)/ instead of loadConnStr
