@@ -141,6 +141,8 @@ staticRoot conf = [st|#{appRoot conf}/static|]
 runConnectionPool :: MonadControlIO m => SqlPersist m a -> ConnectionPool -> m a
 runConnectionPool = runSqlPool
 
+data Database = Sqlite | Postgresql
+
 withDbPool :: MonadControlIO m => AppEnvironment -> Text -> Int -> (ConnectionPool -> m a) -> m a
 withDbPool env cs connPoolsize f = do
      db <- liftIO $ toLower . fst <$> loadConfStr "database" "config/database.yml" env
@@ -157,9 +159,9 @@ loadConfStr key confFile env = do
             database <- lookupScalar key settings
             return (database, settings)
 
-loadConnStr :: String -> AppEnvironment -> IO Text
-loadConnStr "sqlite"     env = fst <$> loadConfStr "database" "config/sqlite.yml" env
-loadConnStr "postgresql" env = do
+loadConnStr :: AppEnvironment -> Database -> IO Text
+loadConnStr env Sqlite     = fst <$> loadConfStr "database" "config/sqlite.yml" env
+loadConnStr env Postgresql = do
   (database, settings) <- loadConfStr "database" "config/postgresql.yml" env
   connPart <- fmap T.concat $ forM (["user", "password", "host", "port"]) $ \key -> do
     value <- lookupScalar key settings
