@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 -- | Settings are centralized, as much as possible, into this file. This
 -- includes database connection settings, static file locations, etc.
 -- In addition, you can configure a number of different aspects of Yesod
@@ -37,9 +38,10 @@ import Yesod (liftIO, MonadControlIO, addWidget, addCassius, addJulius, addLuciu
 import Data.Monoid (mempty)
 import System.Directory (doesFileExist)
 import Data.Text (Text, pack, toLower)
+import qualified Data.Text as T (concat)
 import Data.Object
 import qualified Data.Object.Yaml as YAML
-import Control.Monad (join)
+import Control.Monad (join, forM)
 import Control.Applicative ((<$>))
 
 data AppEnvironment = Test
@@ -141,18 +143,29 @@ runConnectionPool = runSqlPool
 
 withDbPool :: MonadControlIO m => AppEnvironment -> Text -> Int -> (ConnectionPool -> m a) -> m a
 withDbPool env cs connPoolsize f = do
-     db <- liftIO $ toLower <$> loadConfStr "database" "config/database.yml" env
+     db <- liftIO $ toLower . fst <$> loadConfStr "database" "config/database.yml" env
      let withDbPool' = case db of
                           "sqlite" -> withSqlitePool
                           "postgresql" -> withPostgresqlPool
                           _ -> error "not implemented database."
      withDbPool' cs connPoolsize f
 
-loadConfStr :: String -> String -> AppEnvironment -> IO Text
+loadConfStr :: String -> String -> AppEnvironment -> IO (Text, [(String, Object String Text)])
 loadConfStr key confFile env = do
             allDBs <- (join $ YAML.decodeFile (confFile :: String)) >>= fromMapping
-            db <- lookupMapping (show env) allDBs
-            lookupScalar key db
+            settings <- lookupMapping (show env) allDBs
+            database <- lookupScalar key settings
+            return (database, settings)
+
+loadConnStr :: String -> AppEnvironment -> IO Text
+loadConnStr "sqlite"     env = fst <$> loadConfStr "database" "config/sqlite.yml" env
+loadConnStr "postgresql" env = do
+  (database, settings) <- loadConfStr "database" "config/postgresql.yml" env
+  connPart <- fmap T.concat $ forM (["user", "password", "host", "port"]) $ \key -> do
+    value <- lookupScalar key settings
+    return $ [st| #{key}=#{value} |]
+  return $ [st|#{connPart} dbname=#{database}|]
+loadConnStr _ _ = error "unsupported database."
 
 withConnectionPool :: MonadControlIO m => AppConfig -> (ConnectionPool -> m a) -> m a
 withConnectionPool conf f = do
@@ -162,7 +175,7 @@ withConnectionPool conf f = do
     -- | The database connection string. The meaning of this string is backend-
     -- specific.
     loadConnStr :: AppEnvironment -> IO Text
-    loadConnStr = loadConfStr "database" "config/sqlite.yml"
+    loadConnStr env = fst <$> loadConfStr "database" "config/sqlite.yml" env
 
     env = appEnv conf
 
