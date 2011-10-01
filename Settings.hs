@@ -141,18 +141,18 @@ runConnectionPool = runSqlPool
 
 withDbPool :: MonadControlIO m => AppEnvironment -> Text -> Int -> (ConnectionPool -> m a) -> m a
 withDbPool env cs connPoolsize f = do
-     db <- liftIO $ toLower <$> loadConfStr "config/database.yml" env
+     db <- liftIO $ toLower <$> loadConfStr "database" "config/database.yml" env
      let withDbPool' = case db of
                           "sqlite" -> withSqlitePool
                           "postgresql" -> withPostgresqlPool
                           _ -> error "not implemented database."
      withDbPool' cs connPoolsize f
 
-loadConfStr :: String -> AppEnvironment -> IO Text
-loadConfStr confFile env = do
+loadConfStr :: String -> String -> AppEnvironment -> IO Text
+loadConfStr key confFile env = do
             allDBs <- (join $ YAML.decodeFile (confFile :: String)) >>= fromMapping
             db <- lookupMapping (show env) allDBs
-            lookupScalar "database" db
+            lookupScalar key db
 
 withConnectionPool :: MonadControlIO m => AppConfig -> (ConnectionPool -> m a) -> m a
 withConnectionPool conf f = do
@@ -162,10 +162,8 @@ withConnectionPool conf f = do
     -- | The database connection string. The meaning of this string is backend-
     -- specific.
     loadConnStr :: AppEnvironment -> IO Text
-    loadConnStr env = do
-        allSettings <- (join $ YAML.decodeFile ("config/sqlite.yml" :: String)) >>= fromMapping
-        settings <- lookupMapping (show env) allSettings
-        lookupScalar "database" settings
+    loadConnStr = loadConfStr "database" "config/sqlite.yml"
+
 
 -- Example of making a dynamic configuration static
 -- use /return $(mkConnStr Production)/ instead of loadConnStr
