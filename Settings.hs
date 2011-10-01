@@ -183,7 +183,7 @@ withConnectionPool conf f = do
     loadConnStr = fst <$> loadDbConf env "config/sqlite.yml"
 
     database :: IO Database
-    database = toDb . fst <$> loadDbConf env "config/database.yml"
+    database = toDb . toLower . fst <$> loadDbConf env "config/database.yml"
 
     env = appEnv conf
 
