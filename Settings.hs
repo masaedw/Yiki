@@ -162,6 +162,8 @@ loadDbConf env confFile = do
             database <- lookupScalar "database" settings
             return (database, settings)
 
+-- | The database connection string. The meaning of this string is backend-
+-- specific.
 loadConnStr :: AppEnvironment -> Database -> IO Text
 loadConnStr env Sqlite     = fst <$> loadDbConf env "config/sqlite.yml"
 loadConnStr env Postgresql = do
@@ -173,18 +175,12 @@ loadConnStr env Postgresql = do
 
 withConnectionPool :: MonadControlIO m => AppConfig -> (ConnectionPool -> m a) -> m a
 withConnectionPool conf f = do
-    cs <- liftIO loadConnStr
     db <- liftIO database
+    cs <- liftIO $ loadConnStr env db
     withPoolOf db cs (connectionPoolSize conf) f
   where
-    -- | The database connection string. The meaning of this string is backend-
-    -- specific.
-    loadConnStr :: IO Text
-    loadConnStr = fst <$> loadDbConf env "config/sqlite.yml"
-
     database :: IO Database
     database = toDb . toLower . fst <$> loadDbConf env "config/database.yml"
-
     env = appEnv conf
 
 -- Example of making a dynamic configuration static
