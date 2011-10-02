@@ -1,17 +1,29 @@
 Default: &defaults
-  database: postgresql
+  engine: Sqlite
+  database: Yiki.sqlite3
 
 Development:
   <<: *defaults
 
 Test:
-  database: sqlite
+  engine: Sqlite
+  database: Yiki_test.sqlite3
   <<: *defaults
 
 Staging:
-  database: sqlite
+  enigne: Postgresql
+  user: yiki
+  password: yiki
+  host: localhost
+  port: 5432
+  database: yiki_staging
   <<: *defaults
 
 Production:
-  database: postgresql
+  engine: Postgresql
+  user: yiki
+  password: yiki
+  host: localhost
+  port: 5432
+  database: yiki_production
   <<: *defaults
