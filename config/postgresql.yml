@@ -1,0 +1,20 @@
+Default: &defaults
+  user: yiki
+  password: yiki
+  host: localhost
+  port: 5432
+  database: yiki
+
+Development:
+  <<: *defaults
+
+Test:
+  database: yiki_test
+  <<: *defaults
+
+Staging:
+  database: yiki_staging
+
+Production:
+  database: yiki_production
+  <<: *defaults
