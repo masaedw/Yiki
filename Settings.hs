@@ -37,12 +37,13 @@ import Database.Persist.Postgresql
 import Yesod (liftIO, MonadControlIO, addWidget, addCassius, addJulius, addLucius, whamletFile)
 import Data.Monoid (mempty)
 import System.Directory (doesFileExist)
-import Data.Text (Text, pack, toLower)
+import Data.Text (Text, pack, unpack, toLower)
 import qualified Data.Text as T (concat)
 import Data.Object
 import qualified Data.Object.Yaml as YAML
 import Control.Monad (join, forM)
 import Control.Applicative ((<$>))
+
 
 data AppEnvironment = Test
                     | Development
@@ -142,45 +143,46 @@ runConnectionPool :: MonadControlIO m => SqlPersist m a -> ConnectionPool -> m a
 runConnectionPool = runSqlPool
 
 data Database = Sqlite | Postgresql
-              deriving Show
-
-toDb :: Text -> Database
-toDb "sqlite" = Sqlite
-toDb "postgresql" = Postgresql
-toDb _ = error "unsupported database"
+              deriving (Show, Read)
 
 withPoolOf :: MonadControlIO m => Database -> Text -> Int -> (ConnectionPool -> m a) -> m a
 withPoolOf db = case db of
                   Sqlite -> withSqlitePool
                   Postgresql -> withPostgresqlPool
 
-
 loadDbConf :: AppEnvironment -> String -> IO (Text, [(String, Object String Text)])
-loadDbConf env confFile = do
-            allDBs <- (join $ YAML.decodeFile (confFile :: String)) >>= fromMapping
+loadDbConf env key = do
+            allDBs <- (join $ YAML.decodeFile ("config/database.yml" :: String)) >>= fromMapping
             settings <- lookupMapping (show env) allDBs
-            database <- lookupScalar "database" settings
+            database <- lookupScalar key settings
             return (database, settings)
+
+loadDbEngine :: AppEnvironment -> IO Database
+loadDbEngine env = read . unpack . fst  <$> loadDbConf env "engine"
 
 -- | The database connection string. The meaning of this string is backend-
 -- specific.
 loadConnStr :: AppEnvironment -> Database -> IO Text
-loadConnStr env Sqlite     = fst <$> loadDbConf env "config/sqlite.yml"
-loadConnStr env Postgresql = do
-  (database, settings) <- loadDbConf env "config/postgresql.yml"
-  connPart <- fmap T.concat $ forM (["user", "password", "host", "port"]) $ \key -> do
-    value <- lookupScalar key settings
-    return $ [st| #{key}=#{value} |]
-  return $ [st|#{connPart} dbname=#{database}|]
+loadConnStr env engine = case engine of
+                           Sqlite -> loadSqliteConnStr
+                           Postgresql -> loadPostgresqlConnStr
+    where
+      loadSqliteConnStr = fst <$> loadDbConf env "database"
+
+      loadPostgresqlConnStr = do
+        (database, settings) <- loadDbConf env "database"
+        connPart <- fmap T.concat $ forM (["user", "password", "host", "port"]) $ \key -> do
+            value <- lookupScalar key settings
+            return $ [st| #{key}=#{value} |]
+        return $ [st|#{connPart} dbname=#{database}|]
 
 withConnectionPool :: MonadControlIO m => AppConfig -> (ConnectionPool -> m a) -> m a
 withConnectionPool conf f = do
-    db <- liftIO database
+    db <- liftIO $ loadDbEngine env
     cs <- liftIO $ loadConnStr env db
     withPoolOf db cs (connectionPoolSize conf) f
   where
-    database :: IO Database
-    database = toDb . toLower . fst <$> loadDbConf env "config/database.yml"
+    env :: AppEnvironment
     env = appEnv conf
 
 -- Example of making a dynamic configuration static
