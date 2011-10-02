@@ -22,6 +22,7 @@ import Settings.StaticFiles
 import Yesod.Auth
 import Yesod.Auth.OpenId
 import Yesod.Auth.Email
+import Yesod.Auth.OAuth
 import Yesod.Form.Types ()
 import Yesod.Logger (Logger, logLazyText)
 import qualified Settings
@@ -142,9 +143,14 @@ instance YesodAuth Yiki where
             Nothing -> do
                 fmap Just $ insert $ User (credsIdent creds) Nothing
 
-    authPlugins = [ authOpenId
+    authPlugins = [ -- authOpenId --
+                    twitter
                   , authEmail
                   ]
+
+-- 認証後のリダイレクト先がLocalhost:3000になっているので、
+-- デプロイ用に書き換える必要があります。
+twitter = undefined
 
 -- Sends off your mail. Requires sendmail in production!
 deliver :: Yiki -> L.ByteString -> IO ()

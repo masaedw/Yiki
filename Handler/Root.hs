@@ -48,7 +48,7 @@ yikiPageEditForm :: Maybe YikiPageEdit -> Html -> Form Yiki Yiki (FormResult Yik
 yikiPageEditForm ype = renderDivs $ YikiPageEdit <$> areq textareaField "" (peBody <$> ype)
 
 getEditR :: Text -> Handler RepHtml
-getEditR pageName = do
+getEditR pageName = withLogin $ do
   -- result :: Maybe (YikiPageId, YikiPage)
   result <- runDB $ getPage pageName
   let edit = case result of
@@ -135,6 +135,14 @@ page `toWidgetWith` routeRender = either failure success rendered
       failure err = [whamlet|<p>#{err}</p><pre>#{body}</pre>|]
 
 
+withLogin :: Handler response -> Handler response
+withLogin responseSomething = do
+  user <- maybeAuth
+  case user of
+    Just login -> responseSomething
+    Nothing    -> goLoginPage
+  where
+    goLoginPage = redirect RedirectTemporary $ AuthR LoginR
 
 ------------------------------------------------------------
 -- Design
